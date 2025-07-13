@@ -16,8 +16,8 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 max-w-screen-2xl items-center">
-        <div className="mr-4 hidden md:flex">
+      <div className="container flex h-20 max-w-screen-2xl items-center">
+        <div className="mr-6 hidden md:flex">
           <Logo />
         </div>
         
@@ -25,7 +25,7 @@ export default function Header() {
           <div className="md:hidden">
             <Logo />
           </div>
-          <nav className="hidden items-center gap-8 text-sm md:flex">
+          <nav className="hidden items-center gap-12 text-sm md:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
