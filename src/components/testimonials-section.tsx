@@ -4,14 +4,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star } from 'lucide-react';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel';
-import Autoplay from 'embla-carousel-autoplay';
 import React from 'react';
 
 const testimonials = [
@@ -53,6 +45,20 @@ const testimonials = [
     dataHint: 'woman smiling',
     quote: 'Our online store\'s landing page, built with Luminous, has a conversion rate that\'s through the roof. It\'s fast, responsive, and looks amazing on all devices.',
   },
+    {
+    name: 'Alex Thompson',
+    title: 'Indie Developer',
+    image: 'https://placehold.co/100x100.png',
+    dataHint: 'developer coding',
+    quote: 'The component-based architecture is a dream to work with. I could integrate my own custom components seamlessly.',
+  },
+  {
+    name: 'Olivia Martinez',
+    title: 'Product Manager',
+    image: 'https://placehold.co/100x100.png',
+    dataHint: 'professional woman',
+    quote: 'Luminous helped us test new product ideas faster than ever. The ability to quickly spin up high-quality landing pages is invaluable.',
+  },
 ];
 
 function Rating({ count = 5 }) {
@@ -65,8 +71,27 @@ function Rating({ count = 5 }) {
   );
 }
 
+const TestimonialCard = ({ testimonial }: { testimonial: (typeof testimonials)[0] }) => (
+    <Card className="flex flex-col justify-between h-full min-w-[350px] max-w-[350px] shadow-lg">
+      <CardContent className="p-6">
+        <Rating />
+        <p className="mt-4 text-muted-foreground">"{testimonial.quote}"</p>
+      </CardContent>
+      <div className="bg-muted p-6 flex items-center gap-4">
+        <Avatar>
+          <AvatarImage src={testimonial.image} alt={testimonial.name} data-ai-hint={testimonial.dataHint} />
+          <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div>
+          <p className="font-semibold">{testimonial.name}</p>
+          <p className="text-sm text-muted-foreground">{testimonial.title}</p>
+        </div>
+      </div>
+    </Card>
+);
+
 export default function TestimonialsSection() {
-  const plugin = React.useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
+  const duplicatedTestimonials = [...testimonials, ...testimonials];
 
   return (
     <section id="testimonials" className="py-20 md:py-32">
@@ -77,43 +102,13 @@ export default function TestimonialsSection() {
             Don't just take our word for it. Here's what our happy customers have to say about Luminous.
           </p>
         </div>
-        <Carousel
-          plugins={[plugin.current]}
-          className="w-full max-w-4xl mx-auto"
-          onMouseEnter={plugin.current.stop}
-          onMouseLeave={plugin.current.reset}
-          opts={{
-            align: 'start',
-            loop: true,
-          }}
-        >
-          <CarouselContent>
-            {testimonials.map((testimonial) => (
-              <CarouselItem key={testimonial.name} className="md:basis-1/2 lg:basis-1/3">
-                <div className="p-1 h-full">
-                  <Card className="flex flex-col justify-between h-full">
-                    <CardContent className="p-6">
-                      <Rating />
-                      <p className="mt-4 text-muted-foreground">"{testimonial.quote}"</p>
-                    </CardContent>
-                    <div className="bg-muted p-6 flex items-center gap-4">
-                      <Avatar>
-                        <AvatarImage src={testimonial.image} alt={testimonial.name} data-ai-hint={testimonial.dataHint} />
-                        <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold">{testimonial.name}</p>
-                        <p className="text-sm text-muted-foreground">{testimonial.title}</p>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
-        </Carousel>
+        <div className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_20%,white_80%,transparent)]">
+            <div className="flex w-max space-x-4 testimonial-scroller hover:[animation-play-state:paused]">
+              {duplicatedTestimonials.map((testimonial, index) => (
+                <TestimonialCard key={`${testimonial.name}-${index}`} testimonial={testimonial} />
+              ))}
+            </div>
+        </div>
       </div>
     </section>
   );
