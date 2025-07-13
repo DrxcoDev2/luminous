@@ -38,10 +38,17 @@ export default function RegisterPage() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" required />
           </div>
+          <p className="text-xs text-muted-foreground text-center">
+            By creating an account, you agree to our{' '}
+            <Link href="/policy" className="underline hover:text-primary">
+              Terms & Conditions
+            </Link>
+            .
+          </p>
         </CardContent>
         <CardFooter className="flex-col items-start gap-4">
           <Button className="w-full">Create Account</Button>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground w-full text-center">
             Already have an account?{' '}
             <Link href="/login" className="text-primary underline">
               Login
