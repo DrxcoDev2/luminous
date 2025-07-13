@@ -9,7 +9,7 @@ export default function HeroSection() {
       <div className="container px-4 md:px-6">
         <div className="grid gap-6 lg:grid-cols-[1fr_550px] lg:gap-12 xl:grid-cols-[1fr_650px]">
           <div className="flex flex-col justify-center space-y-4 text-center lg:text-left p-8">
-            <div className="space-y-2">
+            <div className="space-y-4">
               <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl xl:text-7xl/none">
                 Illuminate Your Path to Success
               </h1>
