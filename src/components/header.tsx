@@ -15,7 +15,7 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky pl-28 top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-24 max-w-screen-2xl items-center">
         <div className="mr-12 hidden md:flex">
           <Logo />
@@ -38,8 +38,13 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-2">
-             <div className="hidden md:block">
-               <Button>Get Started</Button>
+             <div className="hidden md:flex items-center gap-2">
+                <Button variant="ghost" asChild>
+                    <Link href="/login">Login</Link>
+                </Button>
+               <Button asChild>
+                 <Link href="/register">Sign Up</Link>
+               </Button>
              </div>
              <Sheet open={isOpen} onOpenChange={setIsOpen}>
                <SheetTrigger asChild className="md:hidden">
@@ -65,7 +70,14 @@ export default function Header() {
                        </Link>
                      ))}
                    </nav>
-                   <Button onClick={() => setIsOpen(false)} className="w-full">Get Started</Button>
+                   <div className="flex flex-col gap-2">
+                    <Button onClick={() => setIsOpen(false)} asChild className="w-full">
+                        <Link href="/register">Sign Up</Link>
+                    </Button>
+                    <Button onClick={() => setIsOpen(false)} variant="outline" asChild className="w-full">
+                        <Link href="/login">Login</Link>
+                    </Button>
+                   </div>
                  </div>
                </SheetContent>
              </Sheet>

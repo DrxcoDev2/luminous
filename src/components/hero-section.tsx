@@ -19,14 +19,14 @@ export default function HeroSection() {
             </div>
             <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center lg:justify-start">
               <Button asChild size="lg">
-                <Link href="#">
+                <Link href="/register">
                   Get Started Free
                   <MoveRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href="#">
-                  View Demo
+                <Link href="/login">
+                  Login
                 </Link>
               </Button>
             </div>

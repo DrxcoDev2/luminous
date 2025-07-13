@@ -12,7 +12,7 @@ export default function CtaSection() {
             Join thousands of creators building their best work with Luminous. Start your free trial today. No credit card required.
           </p>
           <Button size="lg" asChild className="shadow-lg">
-            <Link href="#">
+            <Link href="/register">
               Start Building for Free
               <MoveRight className="ml-2" />
             </Link>
