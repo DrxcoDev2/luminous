@@ -344,8 +344,8 @@ export default function ClientsPage() {
           <TableCell><Skeleton className="h-4 w-32" /></TableCell>
           <TableCell><Skeleton className="h-4 w-48" /></TableCell>
           <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-36" /></TableCell>
-          <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-36" /></TableCell>
-          <TableCell className="hidden xl:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
+          <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-36" /></TableCell>
+          <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
           <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
           <TableCell><Skeleton className="h-8 w-8" /></TableCell>
         </TableRow>
@@ -414,8 +414,9 @@ export default function ClientsPage() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead className="hidden md:table-cell">Appointment</TableHead>
-                  <TableHead className="hidden lg:table-cell">Interests</TableHead>
+                  <TableHead className="hidden md:table-cell">Phone</TableHead>
+                  <TableHead className="hidden lg:table-cell">Appointment</TableHead>
+                  <TableHead className="hidden xl:table-cell">Interests</TableHead>
                   <TableHead>Info</TableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
@@ -428,8 +429,9 @@ export default function ClientsPage() {
                         <TableRow key={client.id}>
                             <TableCell className="font-medium">{client.name}</TableCell>
                             <TableCell>{client.email}</TableCell>
-                             <TableCell className="hidden md:table-cell">{client.appointmentDateTime ? `${formatInTimezone(client.appointmentDateTime, 'PP')} @ ${formatInTimezone(client.appointmentDateTime, 'HH:mm')}` : 'N/A'}</TableCell>
-                            <TableCell className="hidden lg:table-cell">
+                            <TableCell className="hidden md:table-cell">{client.phone || 'N/A'}</TableCell>
+                             <TableCell className="hidden lg:table-cell">{client.appointmentDateTime ? `${formatInTimezone(client.appointmentDateTime, 'PP')} @ ${formatInTimezone(client.appointmentDateTime, 'HH:mm')}` : 'N/A'}</TableCell>
+                            <TableCell className="hidden xl:table-cell">
                                 <div className="flex flex-wrap gap-1">
                                     {client.interests && client.interests.length > 0 ? client.interests.map(interestId => {
                                         const interest = interests.find(i => i.id === interestId);
