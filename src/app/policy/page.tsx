@@ -17,7 +17,7 @@ export default function PolicyPage() {
               <h3 className="text-xl font-semibold text-foreground">1. Introduction</h3>
               <p>
                 Welcome to Luminous! These Terms and Conditions outline the rules and regulations for the use of
-                Luminous's Website, located at luminous.app. By accessing this website we assume you accept
+                Luminous&apos;s Website, located at luminous.app. By accessing this website we assume you accept
                 these terms and conditions. Do not continue to use Luminous if you do not agree to take all of
                 the terms and conditions stated on this page.
               </p>

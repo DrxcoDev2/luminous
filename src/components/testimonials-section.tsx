@@ -75,7 +75,7 @@ const TestimonialCard = ({ testimonial }: { testimonial: (typeof testimonials)[0
     <Card className="flex flex-col justify-between h-full min-w-[350px] max-w-[350px] shadow-lg">
       <CardContent className="p-6">
         <Rating />
-        <p className="mt-4 text-muted-foreground">"{testimonial.quote}"</p>
+        <p className="mt-4 text-muted-foreground">&quot;{testimonial.quote}&quot;</p>
       </CardContent>
       <div className="bg-muted p-6 flex items-center gap-4">
         <Avatar>
@@ -99,7 +99,7 @@ export default function TestimonialsSection() {
         <div className="text-center space-y-4 mb-12">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">Loved by Teams Worldwide</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Don't just take our word for it. Here's what our happy customers have to say about Luminous.
+            Don&apos;t just take our word for it. Here&apos;s what our happy customers have to say about Luminous.
           </p>
         </div>
         <div className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_20%,white_80%,transparent)]">

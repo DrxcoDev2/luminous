@@ -36,7 +36,7 @@ type ActionType = typeof actionTypes
 
 type Action =
   | {
-      type: ActionType["ADD_TOAST"]
+      type: ActionType[keyof ActionType]
       toast: ToasterToast
     }
   | {

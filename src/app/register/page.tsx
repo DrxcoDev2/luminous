@@ -25,7 +25,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signUp, signInWithGoogle, signInWithGitHub } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Github, Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
@@ -40,7 +39,6 @@ const formSchema = z.object({
 export default function RegisterPage() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState<string | null>(null);
 

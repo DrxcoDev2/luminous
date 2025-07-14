@@ -117,7 +117,7 @@ export default function ClientsPage() {
             setTimezone(settings.timezone);
         }
         setClients(fetchedClients);
-      } catch (error) {
+      } catch {
          toast({
           variant: 'destructive',
           title: 'Uh oh! Something went wrong.',
@@ -251,7 +251,7 @@ export default function ClientsPage() {
       setIsFormDialogOpen(false);
       setEditingClient(null);
       form.reset();
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
@@ -271,7 +271,7 @@ export default function ClientsPage() {
       toast({ title: 'Success!', description: 'Client has been deleted.' });
       setIsDeletingDialogOpen(false);
       setDeletingClient(null);
-    } catch (error) {
+    } catch {
        toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
@@ -293,7 +293,7 @@ export default function ClientsPage() {
         description: 'Your email has been queued for sending.',
       });
       setIsContactDialogOpen(false);
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Failed to Send Email',
@@ -648,7 +648,7 @@ export default function ClientsPage() {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the client
-              "{deletingClient?.name}" and remove their data from our servers.
+              &quot;{deletingClient?.name}&quot; and remove their data from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

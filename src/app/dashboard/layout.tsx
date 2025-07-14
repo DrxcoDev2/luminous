@@ -2,7 +2,7 @@
 'use client';
 
 import { useAuth } from '@/contexts/auth-context';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { logOut } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +28,6 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, loading } = useAuth();
-  const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
 

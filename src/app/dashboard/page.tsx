@@ -3,15 +3,15 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Calendar, ArrowRight, BarChart, Settings, Building, Globe } from 'lucide-react';
+import { Users, Calendar, ArrowRight, Settings, Building, Globe } from 'lucide-react';
 import Link from 'next/link';
 import type { Client } from '@/types/client';
 import { useAuth } from '@/contexts/auth-context';
 import { getClients } from '@/lib/firestore';
-import { format, parseISO, startOfWeek, endOfWeek, subWeeks, formatISO } from 'date-fns';
+import { format, parseISO, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
 import { format as formatTZ, toZonedTime } from 'date-fns-tz';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { Bar, BarChart as RechartsBarChart, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { getUserSettings } from '@/lib/user-settings';
 import type { UserSettings } from '@/types/user-settings';

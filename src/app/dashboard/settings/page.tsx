@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building, Globe } from 'lucide-react';
-import type { UserSettings } from '@/types/user-settings';
 import { getUserSettings, saveUserSettings } from '@/lib/user-settings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { timezones } from '@/lib/timezones';
@@ -61,7 +60,7 @@ export default function SettingsPage() {
             timezone: userSettings.timezone || 'UTC',
           });
         }
-      } catch (error) {
+      } catch {
         toast({
           variant: 'destructive',
           title: 'Uh oh! Something went wrong.',
@@ -95,7 +94,7 @@ export default function SettingsPage() {
         title: 'Success!',
         description: 'Your settings have been saved.',
       });
-    } catch (error) {
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',

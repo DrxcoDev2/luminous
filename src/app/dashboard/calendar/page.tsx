@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { getClients } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { format as formatTZ, toZonedTime } from 'date-fns-tz';
-import { addDays, parseISO } from 'date-fns';
+import { parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserCircle, Clock } from 'lucide-react';
@@ -42,7 +42,7 @@ export default function CalendarPage() {
 
         const clientsWithAppointments = allClients.filter(client => client.appointmentDateTime);
         setClients(clientsWithAppointments);
-      } catch (error) {
+      } catch {
         toast({
           variant: 'destructive',
           title: 'Uh oh! Something went wrong.',
