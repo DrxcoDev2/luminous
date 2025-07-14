@@ -51,10 +51,10 @@ export default function DashboardPage() {
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarHeader>
+        <SidebarHeader className="p-4">
           <Logo />
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="p-4">
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton href="/dashboard" isActive>
@@ -70,8 +70,8 @@ export default function DashboardPage() {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter>
-           <div className="flex items-center gap-2">
+        <SidebarFooter className="p-4 flex-row justify-between items-center">
+           <div className="flex items-center gap-2 overflow-hidden">
              <Avatar className="h-8 w-8">
                <AvatarImage src={user.photoURL ?? ''} />
                 <AvatarFallback>
