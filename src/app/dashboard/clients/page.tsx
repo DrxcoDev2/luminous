@@ -532,9 +532,11 @@ export default function ClientsPage() {
                               onSelect={(date) => {
                                 const currentValue = field.value || new Date();
                                 const newDate = date || currentValue;
-                                newDate.setHours(currentValue.getHours());
-                                newDate.setMinutes(currentValue.getMinutes());
-                                field.onChange(newDate);
+                                if (date) {
+                                  newDate.setHours(currentValue.getHours());
+                                  newDate.setMinutes(currentValue.getMinutes());
+                                }
+                                field.onChange(date ? newDate : undefined);
                               }}
                               initialFocus
                             />
@@ -549,9 +551,12 @@ export default function ClientsPage() {
                               onChange={(e) => {
                                 const currentValue = field.value || new Date();
                                 const [hours, minutes] = e.target.value.split(':');
-                                currentValue.setHours(parseInt(hours, 10));
-                                currentValue.setMinutes(parseInt(minutes, 10));
-                                field.onChange(new Date(currentValue));
+                                const newDate = new Date(currentValue);
+                                if (!isNaN(parseInt(hours, 10)) && !isNaN(parseInt(minutes, 10))) {
+                                  newDate.setHours(parseInt(hours, 10));
+                                  newDate.setMinutes(parseInt(minutes, 10));
+                                  field.onChange(newDate);
+                                }
                               }}
                             />
                         </div>
