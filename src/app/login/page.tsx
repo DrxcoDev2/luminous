@@ -37,7 +37,7 @@ const formSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -52,10 +52,10 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (!loading && user) {
       router.push('/dashboard');
     }
-  }, [user, router]);
+  }, [user, loading, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -93,6 +93,7 @@ export default function LoginPage() {
     } catch (error: any) {
       if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
         // User closed the popup, so we don't need to show an error.
+        setIsSocialLoading(null);
         return;
       }
       toast({
@@ -105,8 +106,12 @@ export default function LoginPage() {
     }
   }
 
-  if (user) {
-    return null; // Don't render the page if user is logged in
+  if (loading || user) {
+    return (
+       <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   return (
