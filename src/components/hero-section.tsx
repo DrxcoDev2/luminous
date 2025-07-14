@@ -7,8 +7,8 @@ export default function HeroSection() {
   return (
     <section className="w-full py-24 md:py-32 lg:py-40">
       <div className="container px-4 md:px-6">
-        <div className="grid gap-6 lg:grid-cols-[1fr_550px] lg:gap-12 xl:grid-cols-[1fr_650px]">
-          <div className="flex flex-col justify-center space-y-4 text-center lg:text-left p-8">
+        <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 xl:gap-24 items-center">
+          <div className="flex flex-col justify-center space-y-4 text-center lg:text-left">
             <div className="space-y-4">
               <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl xl:text-7xl/none">
                 Effortlessly Manage Your Client Appointments
@@ -32,11 +32,11 @@ export default function HeroSection() {
             </div>
           </div>
           <Image
-            src="https://placehold.co/650x450.png"
-            width="650"
-            height="450"
             alt="Hero"
-            className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
+            className="mx-auto aspect-square overflow-hidden rounded-xl object-cover sm:w-full"
+            height="550"
+            src="https://placehold.co/550x550.png"
+            width="550"
             data-ai-hint="internet illustration"
           />
         </div>
