@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm, useForm as useContactForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -156,10 +156,10 @@ export default function ClientsPage() {
     defaultValues: { note: '' },
   });
 
-  const formatInTimezone = (date: Date | string, fmt: string) => {
+  const formatInTimezone = useCallback((date: Date | string, fmt: string) => {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     return formatTZ(toZonedTime(dateObj, timezone), fmt, { timeZone: timezone });
-  };
+  }, [timezone]);
 
 
   useEffect(() => {
@@ -221,7 +221,7 @@ export default function ClientsPage() {
         toast({ title: 'Success!', description: 'Client has been updated.' });
       } else {
         const newClientId = await addClient(clientData, user.uid);
-        const newClient: Client = { id: newClientId, ...clientData, status: 'Active', userId: user.uid };
+        const newClient: Client = { id: newClientId, ...clientData, status: 'Active', userId: user.uid, createdAt: new Date() as any };
         setClients(prev => [newClient, ...prev]);
         toast({ title: 'Success!', description: 'New client has been added.' });
       }
@@ -532,5 +532,3 @@ export default function ClientsPage() {
     </div>
   );
 }
-
-    
