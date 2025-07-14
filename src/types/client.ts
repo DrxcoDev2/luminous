@@ -1,5 +1,6 @@
 
 import type { Timestamp } from 'firebase/firestore';
+import type { ClientNote } from './client-note';
 
 export interface Client {
   id: string;
@@ -14,4 +15,7 @@ export interface Client {
   dateOfBirth?: string; // Storing as ISO string e.g., "YYYY-MM-DD"
   appointmentDateTime?: string; // Storing as ISO string
   createdAt: Timestamp;
+  notes?: ClientNote[]; // Notes will be loaded on demand into this optional array
 }
+
+    

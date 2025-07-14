@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm, useForm as useContactForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit, Home, Milestone, CalendarIcon, Globe, Clock } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit, Home, Milestone, CalendarIcon, Globe, Clock, Info, MessageSquare, Send } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -60,7 +60,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import type { Client } from '@/types/client';
-import { addClient, getClients, updateClient, deleteClient, sendEmail } from '@/lib/firestore';
+import type { ClientNote } from '@/types/client-note';
+import { addClient, getClients, updateClient, deleteClient, sendEmail, addNote, getNotes, deleteNote } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
@@ -68,6 +69,8 @@ import { parseISO } from 'date-fns';
 import { format as formatTZ, toZonedTime } from 'date-fns-tz';
 import { Textarea } from '@/components/ui/textarea';
 import { getUserSettings } from '@/lib/user-settings';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const clientSchema = z.object({
@@ -86,6 +89,10 @@ const contactSchema = z.object({
   message: z.string().min(1, { message: 'Message is required.' }),
 });
 
+const noteSchema = z.object({
+  note: z.string().min(1, { message: 'Note cannot be empty.' }).max(500, { message: 'Note cannot exceed 500 characters.' }),
+});
+
 export default function ClientsPage() {
   const { user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
@@ -95,10 +102,14 @@ export default function ClientsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
   const [contactingClient, setContactingClient] = useState<Client | null>(null);
   const [timezone, setTimezone] = useState('UTC');
+  const [notes, setNotes] = useState<ClientNote[]>([]);
+  const [isFetchingNotes, setIsFetchingNotes] = useState(false);
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [isDeletingNote, setIsDeletingNote] = useState<string | null>(null);
 
   const { toast } = useToast();
 
@@ -132,26 +143,19 @@ export default function ClientsPage() {
 
   const form = useForm<z.infer<typeof clientSchema>>({
     resolver: zodResolver(clientSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      postalCode: '',
-      nationality: '',
-      dateOfBirth: '',
-      appointmentDateTime: '',
-    },
+    defaultValues: { name: '', email: '', phone: '', address: '', postalCode: '', nationality: '', dateOfBirth: '', appointmentDateTime: '' },
   });
   
   const contactForm = useContactForm<z.infer<typeof contactSchema>>({
     resolver: zodResolver(contactSchema),
-    defaultValues: {
-      subject: '',
-      message: '',
-    },
+    defaultValues: { subject: '', message: '' },
   });
   
+  const noteForm = useForm<z.infer<typeof noteSchema>>({
+    resolver: zodResolver(noteSchema),
+    defaultValues: { note: '' },
+  });
+
   const formatInTimezone = (date: Date | string, fmt: string) => {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     return formatTZ(toZonedTime(dateObj, timezone), fmt, { timeZone: timezone });
@@ -159,40 +163,31 @@ export default function ClientsPage() {
 
 
   useEffect(() => {
-    if (editingClient) {
+    if (selectedClient) {
       form.reset({
-        name: editingClient.name,
-        email: editingClient.email,
-        phone: editingClient.phone || '',
-        address: editingClient.address || '',
-        postalCode: editingClient.postalCode || '',
-        nationality: editingClient.nationality || '',
-        dateOfBirth: editingClient.dateOfBirth || '',
-        appointmentDateTime: editingClient.appointmentDateTime
-          ? editingClient.appointmentDateTime.substring(0, 16)
-          : '',
+        name: selectedClient.name,
+        email: selectedClient.email,
+        phone: selectedClient.phone || '',
+        address: selectedClient.address || '',
+        postalCode: selectedClient.postalCode || '',
+        nationality: selectedClient.nationality || '',
+        dateOfBirth: selectedClient.dateOfBirth || '',
+        appointmentDateTime: selectedClient.appointmentDateTime ? selectedClient.appointmentDateTime.substring(0, 16) : '',
       });
+      fetchNotes(selectedClient.id);
     } else {
-      form.reset({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        postalCode: '',
-        nationality: '',
-        dateOfBirth: '',
-        appointmentDateTime: '',
-      });
+      form.reset({ name: '', email: '', phone: '', address: '', postalCode: '', nationality: '', dateOfBirth: '', appointmentDateTime: '' });
+      setNotes([]);
     }
-  }, [editingClient, form]);
+  }, [selectedClient, form]);
 
   const handleAddNewClientClick = () => {
-    setEditingClient(null);
+    setSelectedClient(null);
     setIsFormDialogOpen(true);
   };
 
-  const handleEditClientClick = (client: Client) => {
-    setEditingClient(client);
+  const handleEditOrViewClientClick = (client: Client) => {
+    setSelectedClient(client);
     setIsFormDialogOpen(true);
   };
   
@@ -207,56 +202,34 @@ export default function ClientsPage() {
     setIsContactDialogOpen(true);
   };
 
-
   async function onSubmit(values: z.infer<typeof clientSchema>) {
-    if (!user) {
-       toast({
-        variant: 'destructive',
-        title: 'Authentication Error',
-        description: 'You must be logged in to manage clients.',
-      });
-      return;
-    }
+    if (!user) return toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in to manage clients.' });
     setIsLoading(true);
 
-    const clientData: Omit<Client, 'id' | 'status' | 'userId'> & { id?: string } = {
-      name: values.name,
-      email: values.email,
-      phone: values.phone || undefined,
-      address: values.address || undefined,
-      postalCode: values.postalCode || undefined,
-      nationality: values.nationality || undefined,
-      dateOfBirth: values.dateOfBirth || undefined,
+    const clientData: Omit<Client, 'id' | 'status' | 'userId'| 'createdAt'> & { id?: string } = {
+      name: values.name, email: values.email, phone: values.phone || undefined,
+      address: values.address || undefined, postalCode: values.postalCode || undefined,
+      nationality: values.nationality || undefined, dateOfBirth: values.dateOfBirth || undefined,
       appointmentDateTime: values.appointmentDateTime ? values.appointmentDateTime : undefined,
     };
 
-
     try {
-      if (editingClient) {
-        const updatedClient = { ...editingClient, ...clientData };
+      if (selectedClient) {
+        const updatedClient = { ...selectedClient, ...clientData };
         await updateClient(updatedClient);
         setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c));
         toast({ title: 'Success!', description: 'Client has been updated.' });
       } else {
         const newClientId = await addClient(clientData, user.uid);
-        const newClient: Client = { 
-          id: newClientId, 
-          ...clientData,
-          status: 'Active', 
-          userId: user.uid,
-        };
+        const newClient: Client = { id: newClientId, ...clientData, status: 'Active', userId: user.uid };
         setClients(prev => [newClient, ...prev]);
         toast({ title: 'Success!', description: 'New client has been added.' });
       }
       setIsFormDialogOpen(false);
-      setEditingClient(null);
+      setSelectedClient(null);
       form.reset();
     } catch {
-      toast({
-        variant: 'destructive',
-        title: 'Uh oh! Something went wrong.',
-        description: `Could not ${editingClient ? 'update' : 'add'} the client. Please try again.`,
-      });
+      toast({ variant: 'destructive', title: 'Uh oh! Something went wrong.', description: `Could not ${selectedClient ? 'update' : 'add'} the client. Please try again.` });
     } finally {
       setIsLoading(false);
     }
@@ -272,11 +245,7 @@ export default function ClientsPage() {
       setIsDeletingDialogOpen(false);
       setDeletingClient(null);
     } catch {
-       toast({
-        variant: 'destructive',
-        title: 'Uh oh! Something went wrong.',
-        description: 'Could not delete the client. Please try again.',
-      });
+       toast({ variant: 'destructive', title: 'Uh oh! Something went wrong.', description: 'Could not delete the client. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -285,33 +254,65 @@ export default function ClientsPage() {
   async function onContactSubmit(values: z.infer<typeof contactSchema>) {
     if (!contactingClient) return;
     setIsSendingEmail(true);
-
     try {
       await sendEmail(contactingClient.email, values.subject, values.message);
-      toast({
-        title: 'Email Queued!',
-        description: 'Your email has been queued for sending.',
-      });
+      toast({ title: 'Email Queued!', description: 'Your email has been queued for sending.' });
       setIsContactDialogOpen(false);
     } catch {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to Send Email',
-        description: 'Could not queue the email. Please check the setup and try again.',
-      });
+      toast({ variant: 'destructive', title: 'Failed to Send Email', description: 'Could not queue the email. Please check the setup and try again.' });
     } finally {
       setIsSendingEmail(false);
     }
   }
 
+  const fetchNotes = async (clientId: string) => {
+    setIsFetchingNotes(true);
+    try {
+      const fetchedNotes = await getNotes(clientId);
+      setNotes(fetchedNotes);
+    } catch {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch client notes.' });
+    } finally {
+      setIsFetchingNotes(false);
+    }
+  };
+
+  async function onNoteSubmit(values: z.infer<typeof noteSchema>) {
+    if (!selectedClient) return;
+    setIsAddingNote(true);
+    try {
+      const newNoteId = await addNote(selectedClient.id, values.note);
+      const newNote = await getNotes(selectedClient.id).then(notes => notes.find(n => n.id === newNoteId)!);
+      setNotes(prev => [newNote, ...prev]);
+      noteForm.reset();
+      toast({ title: 'Success!', description: 'Note added.' });
+    } catch {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not add note.' });
+    } finally {
+      setIsAddingNote(false);
+    }
+  }
+  
+  async function handleDeleteNote(noteId: string) {
+    if (!selectedClient) return;
+    setIsDeletingNote(noteId);
+    try {
+      await deleteNote(selectedClient.id, noteId);
+      setNotes(prev => prev.filter(n => n.id !== noteId));
+      toast({ title: 'Success!', description: 'Note deleted.' });
+    } catch {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not delete note.' });
+    } finally {
+      setIsDeletingNote(null);
+    }
+  }
 
   const TableSkeleton = () => (
     <div className="space-y-4 md:hidden">
       {[...Array(3)].map((_, i) => (
         <Card key={i} className="p-4 space-y-3">
           <div className="flex justify-between items-center">
-             <Skeleton className="h-5 w-32" />
-             <Skeleton className="h-6 w-16 rounded-full" />
+             <Skeleton className="h-5 w-32" /> <Skeleton className="h-6 w-16 rounded-full" />
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2"> <Skeleton className="h-4 w-4" /> <Skeleton className="h-4 w-48" /></div>
@@ -341,27 +342,13 @@ export default function ClientsPage() {
 
   const ClientActions = ({ client }: { client: Client}) => (
      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-            <Button aria-haspopup="true" size="icon" variant="ghost">
-            <MoreHorizontal className="h-4 w-4" />
-            <span className="sr-only">Toggle menu</span>
-            </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
         <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onSelect={() => handleContactClientClick(client)}>
-              <Mail className="mr-2 h-4 w-4" />
-              Contact
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => handleEditClientClick(client)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleContactClientClick(client)}><Mail className="mr-2 h-4 w-4" />Contact</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleEditOrViewClientClick(client)}><Edit className="mr-2 h-4 w-4" />Edit Details</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => handleDeleteClientClick(client)} className="text-destructive">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => handleDeleteClientClick(client)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -371,18 +358,11 @@ export default function ClientsPage() {
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <CardTitle className="text-2xl">Clients</CardTitle>
-              <CardDescription>Manage your clients here.</CardDescription>
-            </div>
-            <Button onClick={handleAddNewClientClick} className="w-full sm:w-auto">
-              <PlusCircle className="mr-2" />
-              Add New Client
-            </Button>
+            <div><CardTitle className="text-2xl">Clients</CardTitle><CardDescription>Manage your clients here.</CardDescription></div>
+            <Button onClick={handleAddNewClientClick} className="w-full sm:w-auto"><PlusCircle className="mr-2" />Add New Client</Button>
           </div>
         </CardHeader>
         <CardContent>
-           {/* Mobile View */}
            <div className="md:hidden">
              {isFetching ? <TableSkeleton /> : (
                 <div className="space-y-4">
@@ -391,47 +371,22 @@ export default function ClientsPage() {
                        <div className="flex justify-between items-start">
                          <div>
                             <h3 className="font-semibold text-lg">{client.name}</h3>
-                            <Badge variant={client.status === 'Active' ? 'default' : 'secondary'} className="mt-1">
-                                {client.status}
-                            </Badge>
+                            <Badge variant={client.status === 'Active' ? 'default' : 'secondary'} className="mt-1">{client.status}</Badge>
                          </div>
                          <ClientActions client={client} />
                        </div>
                        <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4" />
-                            <span>{client.email}</span>
-                          </div>
-                          {client.phone && 
-                            <div className="flex items-center gap-2">
-                                <Phone className="h-4 w-4" />
-                                <span>{client.phone}</span>
-                            </div>
-                          }
-                          {client.address && 
-                            <div className="flex items-center gap-2">
-                                <Home className="h-4 w-4" />
-                                <span>{client.address}</span>
-                            </div>
-                          }
-                           {client.appointmentDateTime && 
-                            <div className="flex items-center gap-2">
-                                <CalendarIcon className="h-4 w-4" />
-                                <span>{`${formatInTimezone(client.appointmentDateTime, 'PP')} @ ${formatInTimezone(client.appointmentDateTime, 'HH:mm')}`}</span>
-                            </div>
-                          }
+                          <div className="flex items-center gap-2"><Mail className="h-4 w-4" /><span>{client.email}</span></div>
+                          {client.phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4" /><span>{client.phone}</span></div>}
+                          {client.address && <div className="flex items-center gap-2"><Home className="h-4 w-4" /><span>{client.address}</span></div>}
+                           {client.appointmentDateTime && <div className="flex items-center gap-2"><CalendarIcon className="h-4 w-4" /><span>{`${formatInTimezone(client.appointmentDateTime, 'PP')} @ ${formatInTimezone(client.appointmentDateTime, 'HH:mm')}`}</span></div>}
                        </div>
                     </Card>
-                  )) : (
-                     <div className="text-center h-24 flex items-center justify-center">
-                        <p>No clients yet. Add one to get started!</p>
-                    </div>
-                  )}
+                  )) : ( <div className="text-center h-24 flex items-center justify-center"><p>No clients yet. Add one to get started!</p></div> )}
                 </div>
              )}
            </div>
 
-           {/* Desktop View */}
           <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
@@ -440,8 +395,7 @@ export default function ClientsPage() {
                   <TableHead>Email</TableHead>
                   <TableHead className="hidden md:table-cell">Appointment</TableHead>
                   <TableHead className="hidden lg:table-cell">Address</TableHead>
-                  <TableHead className="hidden xl:table-cell">Phone</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Info</TableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
                   </TableHead>
@@ -453,29 +407,13 @@ export default function ClientsPage() {
                         <TableRow key={client.id}>
                             <TableCell className="font-medium">{client.name}</TableCell>
                             <TableCell>{client.email}</TableCell>
-                             <TableCell className="hidden md:table-cell">
-                              {client.appointmentDateTime ? 
-                                  `${formatInTimezone(client.appointmentDateTime, 'PP')} @ ${formatInTimezone(client.appointmentDateTime, 'HH:mm')}` 
-                                  : 'N/A'
-                              }
-                            </TableCell>
+                             <TableCell className="hidden md:table-cell">{client.appointmentDateTime ? `${formatInTimezone(client.appointmentDateTime, 'PP')} @ ${formatInTimezone(client.appointmentDateTime, 'HH:mm')}` : 'N/A'}</TableCell>
                             <TableCell className="hidden lg:table-cell">{client.address || 'N/A'}</TableCell>
-                            <TableCell className="hidden xl:table-cell">{client.phone || 'N/A'}</TableCell>
-                            <TableCell>
-                              <Badge variant={client.status === 'Active' ? 'default' : 'secondary'}>
-                                {client.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <ClientActions client={client} />
-                            </TableCell>
+                            <TableCell><Button variant="ghost" size="icon" onClick={() => handleEditOrViewClientClick(client)}><Info className="h-4 w-4" /></Button></TableCell>
+                            <TableCell><ClientActions client={client} /></TableCell>
                         </TableRow>
                     )) : (
-                        <TableRow>
-                            <TableCell colSpan={7} className="text-center h-24">
-                                No clients yet. Add one to get started!
-                            </TableCell>
-                        </TableRow>
+                        <TableRow><TableCell colSpan={7} className="text-center h-24">No clients yet. Add one to get started!</TableCell></TableRow>
                     )}
                 </TableBody>
               )}
@@ -484,235 +422,108 @@ export default function ClientsPage() {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Client Dialog */}
-      <Dialog open={isFormDialogOpen} onOpenChange={open => {
-        setIsFormDialogOpen(open);
-        if (!open) setEditingClient(null);
-      }}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={isFormDialogOpen} onOpenChange={open => { setIsFormDialogOpen(open); if (!open) setSelectedClient(null); }}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>{editingClient ? 'Edit Client' : 'Add New Client'}</DialogTitle>
-            <DialogDescription>
-              {editingClient ? 'Update the details for this client.' : 'Fill in the details below to add a new client.'}
-            </DialogDescription>
+            <DialogTitle>{selectedClient ? `Manage: ${selectedClient.name}` : 'Add New Client'}</DialogTitle>
+            <DialogDescription>{selectedClient ? 'Update details or add notes for this client.' : 'Fill in the details below to add a new client.'}</DialogDescription>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                       <div className="relative">
-                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                         <Input placeholder="John Doe" {...field} className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email Address</FormLabel>
-                     <FormControl>
-                       <div className="relative">
-                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                         <Input placeholder="name@example.com" {...field} className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number (Optional)</FormLabel>
-                     <FormControl>
-                       <div className="relative">
-                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                         <Input placeholder="123-456-7890" {...field} className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Home Address (Optional)</FormLabel>
-                     <FormControl>
-                       <div className="relative">
-                         <Home className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                         <Input placeholder="123 Main St, Anytown" {...field} className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="postalCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Postal Code (Optional)</FormLabel>
-                     <FormControl>
-                       <div className="relative">
-                         <Milestone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                         <Input placeholder="12345" {...field} className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="nationality"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nationality (Optional)</FormLabel>
-                     <FormControl>
-                       <div className="relative">
-                         <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                         <Input placeholder="American" {...field} className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="dateOfBirth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Date of birth (Optional)</FormLabel>
-                     <FormControl>
-                       <div className="relative">
-                         <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                         <Input type="date" placeholder="YYYY-MM-DD" {...field} className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="appointmentDateTime"
-                render={({ field }) => (
-                   <FormItem>
-                    <FormLabel>Appointment Time (Optional)</FormLabel>
-                     <FormControl>
-                       <div className="relative">
-                         <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                         <Input type="datetime-local" placeholder="YYYY-MM-DDTHH:mm" {...field} className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-
-              <DialogFooter className="pt-4">
-                <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={isLoading}>
-                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                   {editingClient ? 'Update Client' : 'Add Client'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <Tabs defaultValue="details" className="flex-1 min-h-0">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="notes" disabled={!selectedClient}>Notes</TabsTrigger>
+            </TabsList>
+            <TabsContent value="details" className="h-full">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 pr-4 h-full flex flex-col">
+                  <ScrollArea className="flex-1 pr-2">
+                    <div className="space-y-4">
+                      <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><div className="relative"><User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="John Doe" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="name@example.com" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number (Optional)</FormLabel><FormControl><div className="relative"><Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="123-456-7890" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Home Address (Optional)</FormLabel><FormControl><div className="relative"><Home className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="123 Main St, Anytown" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code (Optional)</FormLabel><FormControl><div className="relative"><Milestone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="12345" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="nationality" render={({ field }) => (<FormItem><FormLabel>Nationality (Optional)</FormLabel><FormControl><div className="relative"><Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="American" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="dateOfBirth" render={({ field }) => (<FormItem><FormLabel>Date of birth (Optional)</FormLabel><FormControl><div className="relative"><CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="date" placeholder="YYYY-MM-DD" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="appointmentDateTime" render={({ field }) => (<FormItem><FormLabel>Appointment Time (Optional)</FormLabel><FormControl><div className="relative"><Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="datetime-local" placeholder="YYYY-MM-DDTHH:mm" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
+                    </div>
+                  </ScrollArea>
+                  <DialogFooter className="pt-4 border-t">
+                    <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
+                    <Button type="submit" disabled={isLoading}>{isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{selectedClient ? 'Update Client' : 'Add Client'}</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </TabsContent>
+            <TabsContent value="notes" className="h-full flex flex-col">
+              <div className="flex-1 min-h-0 py-4">
+                 <ScrollArea className="h-full pr-4">
+                    {isFetchingNotes ? (
+                        <div className="space-y-4"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
+                    ) : notes.length > 0 ? (
+                        <div className="space-y-4">
+                            {notes.map(note => (
+                                <Card key={note.id} className="bg-muted/50">
+                                    <CardContent className="p-4">
+                                        <div className="flex justify-between items-start">
+                                            <p className="text-sm text-foreground whitespace-pre-wrap flex-1 mr-4">{note.text}</p>
+                                            <div className="text-right">
+                                               <p className="text-xs text-muted-foreground">{formatInTimezone(note.createdAt.toDate(), 'PP')}</p>
+                                               <p className="text-xs text-muted-foreground">{formatInTimezone(note.createdAt.toDate(), 'p')}</p>
+                                               <Button variant="ghost" size="icon" className="h-7 w-7 mt-1" onClick={() => handleDeleteNote(note.id)} disabled={isDeletingNote === note.id}>
+                                                  {isDeletingNote === note.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-destructive" />}
+                                               </Button>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center text-muted-foreground h-full flex items-center justify-center"><p>No notes for this client yet.</p></div>
+                    )}
+                 </ScrollArea>
+              </div>
+              <div className="pt-4 border-t">
+                 <Form {...noteForm}>
+                    <form onSubmit={noteForm.handleSubmit(onNoteSubmit)} className="flex items-start gap-2">
+                       <FormField control={noteForm.control} name="note" render={({ field }) => (<FormItem className="flex-1"><FormControl><Textarea placeholder="Add a new note..." {...field} rows={2} /></FormControl><FormMessage /></FormItem>)} />
+                       <Button type="submit" disabled={isAddingNote} size="icon"><span className="sr-only">Add Note</span>{isAddingNote ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4"/>}</Button>
+                    </form>
+                </Form>
+              </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
       
-       {/* Delete Confirmation Dialog */}
        <AlertDialog open={isDeletingDialogOpen} onOpenChange={setIsDeletingDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the client &quot;{deletingClient?.name}&quot; and remove their data from our servers.
-            </AlertDialogDescription>
+            <AlertDialogDescription>This action cannot be undone. This will permanently delete the client &quot;{deletingClient?.name}&quot; and remove their data from our servers.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeletingClient(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
-               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Contact Client Dialog */}
       <Dialog open={isContactDialogOpen} onOpenChange={setIsContactDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Contact {contactingClient?.name}</DialogTitle>
-            <DialogDescription>
-              Compose your email below. It will be sent from your configured Firebase account.
-            </DialogDescription>
+            <DialogDescription>Compose your email below. It will be sent from your configured Firebase account.</DialogDescription>
           </DialogHeader>
           <Form {...contactForm}>
             <form onSubmit={contactForm.handleSubmit(onContactSubmit)} className="space-y-4">
-              <div className="flex items-baseline gap-2">
-                <p className="text-sm font-medium">To:</p>
-                <p className="text-sm text-muted-foreground">{contactingClient?.email}</p>
-              </div>
-              <FormField
-                control={contactForm.control}
-                name="subject"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subject</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Regarding your appointment" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={contactForm.control}
-                name="message"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Message</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Type your message here..."
-                        className="min-h-[150px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="flex items-baseline gap-2"><p className="text-sm font-medium">To:</p><p className="text-sm text-muted-foreground">{contactingClient?.email}</p></div>
+              <FormField control={contactForm.control} name="subject" render={({ field }) => (<FormItem><FormLabel>Subject</FormLabel><FormControl><Input placeholder="Regarding your appointment" {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={contactForm.control} name="message" render={({ field }) => (<FormItem><FormLabel>Message</FormLabel><FormControl><Textarea placeholder="Type your message here..." className="min-h-[150px]" {...field} /></FormControl><FormMessage /></FormItem>)} />
               <DialogFooter className="pt-4">
-                <Button variant="outline" onClick={() => setIsContactDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSendingEmail}>
-                  {isSendingEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
-                  Send Email
-                </Button>
+                <Button variant="outline" onClick={() => setIsContactDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={isSendingEmail}>{isSendingEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}Send Email</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -721,3 +532,5 @@ export default function ClientsPage() {
     </div>
   );
 }
+
+    
