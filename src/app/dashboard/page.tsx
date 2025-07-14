@@ -133,7 +133,7 @@ export default function DashboardPage() {
             <div>
               <p className="font-semibold text-lg">{nextAppointment.name}</p>
               <p className="text-muted-foreground">
-                {format(parseISO(nextAppointment.appointmentDateTime!), 'PPp')}
+                {format(parseISO(nextAppointment.appointmentDateTime!), 'PP HH:mm')}
               </p>
             </div>
           ) : (
