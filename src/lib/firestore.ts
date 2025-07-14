@@ -14,10 +14,6 @@ export const addClient = async (clientData: AddClientData, userId: string) => {
         status: 'Active',
         createdAt: serverTimestamp(),
     };
-
-    // Remove optional fields if they are undefined
-    if (clientData.dateOfBirth === undefined) delete dataWithUserAndTimestamp.dateOfBirth;
-    if (clientData.appointmentDateTime === undefined) delete dataWithUserAndTimestamp.appointmentDateTime;
     
     const docRef = await addDoc(collection(db, 'clients'), dataWithUserAndTimestamp);
     return docRef.id;
@@ -54,17 +50,7 @@ export const updateClient = async (clientData: Client) => {
         // Exclude id from the data to be updated
         const { id, ...dataToUpdate } = clientData;
 
-        const cleanDataToUpdate: any = { ...dataToUpdate };
-
-        // Firestore doesn't allow undefined values.
-        if (dataToUpdate.dateOfBirth === undefined || dataToUpdate.dateOfBirth === null) {
-            delete cleanDataToUpdate.dateOfBirth;
-        }
-        if (dataToUpdate.appointmentDateTime === undefined || dataToUpdate.appointmentDateTime === null) {
-            delete cleanDataToUpdate.appointmentDateTime;
-        }
-
-        await updateDoc(clientRef, cleanDataToUpdate);
+        await updateDoc(clientRef, dataToUpdate as { [x: string]: any });
     } catch (e) {
         console.error('Error updating document: ', e);
         throw new Error('Could not update client');

@@ -64,10 +64,7 @@ import { addClient, getClients, updateClient, deleteClient } from '@/lib/firesto
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Calendar } from '@/components/ui/calendar';
 
 
 const clientSchema = z.object({
@@ -77,8 +74,8 @@ const clientSchema = z.object({
   address: z.string().optional(),
   postalCode: z.string().optional(),
   nationality: z.string().optional(),
-  dateOfBirth: z.date().optional(),
-  appointmentDateTime: z.date().optional(),
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date must be in YYYY-MM-DD format." }).optional().or(z.literal('')),
+  appointmentDateTime: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, { message: "Datetime must be in YYYY-MM-DDTHH:mm format."}).optional().or(z.literal('')),
 });
 
 export default function ClientsPage() {
@@ -124,8 +121,8 @@ export default function ClientsPage() {
       address: '',
       postalCode: '',
       nationality: '',
-      dateOfBirth: undefined,
-      appointmentDateTime: undefined,
+      dateOfBirth: '',
+      appointmentDateTime: '',
     },
   });
 
@@ -138,8 +135,8 @@ export default function ClientsPage() {
         address: editingClient.address || '',
         postalCode: editingClient.postalCode || '',
         nationality: editingClient.nationality || '',
-        dateOfBirth: editingClient.dateOfBirth ? new Date(editingClient.dateOfBirth) : undefined,
-        appointmentDateTime: editingClient.appointmentDateTime ? new Date(editingClient.appointmentDateTime) : undefined,
+        dateOfBirth: editingClient.dateOfBirth || '',
+        appointmentDateTime: editingClient.appointmentDateTime ? editingClient.appointmentDateTime.substring(0, 16) : '',
       });
     } else {
       form.reset({
@@ -149,8 +146,8 @@ export default function ClientsPage() {
         address: '',
         postalCode: '',
         nationality: '',
-        dateOfBirth: undefined,
-        appointmentDateTime: undefined,
+        dateOfBirth: '',
+        appointmentDateTime: '',
       });
     }
   }, [editingClient, form]);
@@ -184,18 +181,13 @@ export default function ClientsPage() {
     const clientData: Omit<Client, 'id' | 'status' | 'userId'> & { id?: string } = {
       name: values.name,
       email: values.email,
-      phone: values.phone,
-      address: values.address,
-      postalCode: values.postalCode,
-      nationality: values.nationality,
+      phone: values.phone || undefined,
+      address: values.address || undefined,
+      postalCode: values.postalCode || undefined,
+      nationality: values.nationality || undefined,
+      dateOfBirth: values.dateOfBirth || undefined,
+      appointmentDateTime: values.appointmentDateTime ? `${values.appointmentDateTime}:00.000Z` : undefined,
     };
-
-    if (values.dateOfBirth) {
-      clientData.dateOfBirth = values.dateOfBirth.toISOString().split('T')[0];
-    }
-    if (values.appointmentDateTime) {
-      clientData.appointmentDateTime = values.appointmentDateTime.toISOString();
-    }
 
 
     try {
@@ -461,39 +453,14 @@ export default function ClientsPage() {
                 control={form.control}
                 name="dateOfBirth"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>Date of birth (Optional)</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "pl-10 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                     <FormControl>
+                       <div className="relative">
+                         <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                         <Input type="date" placeholder="YYYY-MM-DD" {...field} className="pl-10" />
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -503,64 +470,14 @@ export default function ClientsPage() {
                 control={form.control}
                 name="appointmentDateTime"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                   <FormItem>
                     <FormLabel>Appointment Time (Optional)</FormLabel>
-                     <div className="flex gap-2">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "flex-1 pl-10 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={(date) => {
-                                const currentValue = field.value || new Date();
-                                const newDate = date || currentValue;
-                                if (date) {
-                                  newDate.setHours(currentValue.getHours());
-                                  newDate.setMinutes(currentValue.getMinutes());
-                                }
-                                field.onChange(date ? newDate : undefined);
-                              }}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                         <div className="relative flex-none">
-                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type="time"
-                              className="pl-10 w-36"
-                              value={field.value ? format(field.value, 'HH:mm') : ''}
-                              onChange={(e) => {
-                                const currentValue = field.value || new Date();
-                                const [hours, minutes] = e.target.value.split(':');
-                                const newDate = new Date(currentValue);
-                                if (!isNaN(parseInt(hours, 10)) && !isNaN(parseInt(minutes, 10))) {
-                                  newDate.setHours(parseInt(hours, 10));
-                                  newDate.setMinutes(parseInt(minutes, 10));
-                                  field.onChange(newDate);
-                                }
-                              }}
-                            />
-                        </div>
-                    </div>
+                     <FormControl>
+                       <div className="relative">
+                         <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                         <Input type="datetime-local" placeholder="YYYY-MM-DDTHH:mm" {...field} className="pl-10" />
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
