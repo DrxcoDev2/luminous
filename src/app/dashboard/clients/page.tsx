@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2 } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -33,10 +33,22 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -50,11 +62,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import type { Client } from '@/types/client';
-import { addClient, getClients } from '@/lib/firestore';
+import { addClient, getClients, updateClient, deleteClient } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const addClientSchema = z.object({
+const clientSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Invalid email address.' }),
   phone: z.string().optional(),
@@ -62,9 +74,13 @@ const addClientSchema = z.object({
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [isDeletingDialogOpen, setIsDeletingDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -85,8 +101,8 @@ export default function ClientsPage() {
     fetchClients();
   }, [toast]);
 
-  const form = useForm<z.infer<typeof addClientSchema>>({
-    resolver: zodResolver(addClientSchema),
+  const form = useForm<z.infer<typeof clientSchema>>({
+    resolver: zodResolver(clientSchema),
     defaultValues: {
       name: '',
       email: '',
@@ -94,32 +110,85 @@ export default function ClientsPage() {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof addClientSchema>) {
+  useEffect(() => {
+    if (editingClient) {
+      form.reset({
+        name: editingClient.name,
+        email: editingClient.email,
+        phone: editingClient.phone || '',
+      });
+    } else {
+      form.reset({
+        name: '',
+        email: '',
+        phone: '',
+      });
+    }
+  }, [editingClient, form]);
+
+  const handleAddNewClientClick = () => {
+    setEditingClient(null);
+    setIsFormDialogOpen(true);
+  };
+
+  const handleEditClientClick = (client: Client) => {
+    setEditingClient(client);
+    setIsFormDialogOpen(true);
+  };
+  
+  const handleDeleteClientClick = (client: Client) => {
+    setDeletingClient(client);
+    setIsDeletingDialogOpen(true);
+  };
+
+  async function onSubmit(values: z.infer<typeof clientSchema>) {
     setIsLoading(true);
     try {
+      if (editingClient) {
+        const updatedClient = { ...editingClient, ...values };
+        await updateClient(updatedClient);
+        setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c));
+        toast({ title: 'Success!', description: 'Client has been updated.' });
+      } else {
         const newClientId = await addClient(values);
-        const newClient: Client = {
-            id: newClientId,
-            ...values,
-            status: 'Active',
-        };
+        const newClient: Client = { id: newClientId, ...values, status: 'Active' };
         setClients(prev => [...prev, newClient]);
-        setIsDialogOpen(false);
-        form.reset();
-        toast({
-            title: 'Success!',
-            description: 'New client has been added.',
-        });
+        toast({ title: 'Success!', description: 'New client has been added.' });
+      }
+      setIsFormDialogOpen(false);
+      setEditingClient(null);
+      form.reset();
     } catch (error) {
-        toast({
-            variant: 'destructive',
-            title: 'Uh oh! Something went wrong.',
-            description: 'Could not add the client. Please try again.',
-        });
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: `Could not ${editingClient ? 'update' : 'add'} the client. Please try again.`,
+      });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   }
+
+  async function handleDeleteConfirm() {
+    if (!deletingClient) return;
+    setIsLoading(true);
+    try {
+      await deleteClient(deletingClient.id);
+      setClients(clients.filter(c => c.id !== deletingClient.id));
+      toast({ title: 'Success!', description: 'Client has been deleted.' });
+      setIsDeletingDialogOpen(false);
+      setDeletingClient(null);
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Uh oh! Something went wrong.',
+        description: 'Could not delete the client. Please try again.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
 
   const TableSkeleton = () => (
     <TableBody>
@@ -144,81 +213,10 @@ export default function ClientsPage() {
               <CardTitle className="text-2xl">Clients</CardTitle>
               <CardDescription>Manage your clients here.</CardDescription>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <PlusCircle className="mr-2" />
-                  Add New Client
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Add New Client</DialogTitle>
-                  <DialogDescription>
-                    Fill in the details below to add a new client to your list.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
-                             <div className="relative">
-                               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="John Doe" {...field} className="pl-10" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email Address</FormLabel>
-                           <FormControl>
-                             <div className="relative">
-                               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="name@example.com" {...field} className="pl-10" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number (Optional)</FormLabel>
-                           <FormControl>
-                             <div className="relative">
-                               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="123-456-7890" {...field} className="pl-10" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                      <Button type="submit" disabled={isLoading}>
-                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                         Add Client
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={handleAddNewClientClick}>
+              <PlusCircle className="mr-2" />
+              Add New Client
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -256,8 +254,15 @@ export default function ClientsPage() {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                      <DropdownMenuItem>Edit</DropdownMenuItem>
-                                      <DropdownMenuItem>Delete</DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onSelect={() => handleEditClientClick(client)}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onSelect={() => handleDeleteClientClick(client)} className="text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete
+                                      </DropdownMenuItem>
                                   </DropdownMenuContent>
                               </DropdownMenu>
                           </TableCell>
@@ -274,6 +279,100 @@ export default function ClientsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Add/Edit Client Dialog */}
+      <Dialog open={isFormDialogOpen} onOpenChange={open => {
+        setIsFormDialogOpen(open);
+        if (!open) setEditingClient(null);
+      }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{editingClient ? 'Edit Client' : 'Add New Client'}</DialogTitle>
+            <DialogDescription>
+              {editingClient ? 'Update the details for this client.' : 'Fill in the details below to add a new client.'}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                       <div className="relative">
+                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                         <Input placeholder="John Doe" {...field} className="pl-10" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                     <FormControl>
+                       <div className="relative">
+                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                         <Input placeholder="name@example.com" {...field} className="pl-10" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number (Optional)</FormLabel>
+                     <FormControl>
+                       <div className="relative">
+                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                         <Input placeholder="123-456-7890" {...field} className="pl-10" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={isLoading}>
+                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                   {editingClient ? 'Update Client' : 'Add Client'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      
+       {/* Delete Confirmation Dialog */}
+       <AlertDialog open={isDeletingDialogOpen} onOpenChange={setIsDeletingDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the client
+              "{deletingClient?.name}" and remove their data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingClient(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
+               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
