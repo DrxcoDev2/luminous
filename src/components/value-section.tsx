@@ -1,21 +1,21 @@
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { FastForward, Sparkles, TrendingUp } from 'lucide-react';
+import { Users, CalendarCheck, BellRing } from 'lucide-react';
 
 const features = [
   {
-    icon: <FastForward className="h-10 w-10 text-primary" />,
-    title: 'Build in Minutes',
-    description: 'Our intuitive drag-and-drop builder lets you create beautiful pages without writing a single line of code.',
+    icon: <CalendarCheck className="h-10 w-10 text-primary" />,
+    title: 'Easy Scheduling',
+    description: 'Our intuitive calendar allows you to book and view appointments with ease, avoiding any scheduling conflicts.',
   },
   {
-    icon: <Sparkles className="h-10 w-10 text-primary" />,
-    title: 'Stunning Designs',
-    description: 'Choose from a library of professionally designed templates that are fully customizable to match your brand.',
+    icon: <Users className="h-10 w-10 text-primary" />,
+    title: 'Client Management',
+    description: 'Keep all your client information organized in one place, from contact details to their complete appointment history.',
   },
   {
-    icon: <TrendingUp className="h-10 w-10 text-primary" />,
-    title: 'High-Converting',
-    description: 'Optimize for success with built-in A/B testing, analytics, and integrations with your favorite tools.',
+    icon: <BellRing className="h-10 w-10 text-primary" />,
+    title: 'Automated Reminders',
+    description: 'Reduce no-shows with automated email reminders sent to your clients before their scheduled appointments.',
   },
 ];
 
@@ -24,9 +24,9 @@ export default function ValueSection() {
     <section id="features" className="py-20 md:py-32 bg-accent">
       <div className="container mx-auto px-4">
         <div className="text-center space-y-4 mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">Everything You Need to Shine</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">Everything You Need to Streamline Your Business</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Luminous is packed with features designed to help you launch and grow your business online.
+            Luminous is packed with features designed to help you manage your appointments and clients efficiently.
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-8">

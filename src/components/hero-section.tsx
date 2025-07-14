@@ -11,10 +11,10 @@ export default function HeroSection() {
           <div className="flex flex-col justify-center space-y-4 text-center lg:text-left p-8">
             <div className="space-y-4">
               <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl xl:text-7xl/none">
-                Illuminate Your Path to Success
+                Effortlessly Manage Your Client Appointments
               </h1>
               <p className="max-w-[600px] text-muted-foreground md:text-xl mx-auto lg:mx-0">
-                Luminous provides the tools you need to build stunning, high-converting landing pages in minutes.
+                Luminous provides the tools you need to schedule appointments, manage clients, and grow your service-based business.
               </p>
             </div>
             <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center lg:justify-start">

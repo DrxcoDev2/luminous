@@ -13,7 +13,7 @@ const testimonials = [
     image: 'https://placehold.co/100x100.png',
     dataHint: 'woman portrait',
     quote:
-      'Luminous has been a game-changer for our marketing efforts. We launched our new landing page in a day and saw a 30% increase in conversions.',
+      'Luminous has been a game-changer for my consultancy. I can now manage all my client appointments in one place, and the automated reminders are a lifesaver!',
   },
   {
     name: 'Michael Chen',
@@ -21,7 +21,7 @@ const testimonials = [
     image: 'https://placehold.co/100x100.png',
     dataHint: 'man portrait',
     quote:
-      'The design templates are absolutely beautiful and so easy to customize. Our brand has never looked better. Highly recommended!',
+      'The calendar view is fantastic and so easy to use. Our team coordination has improved dramatically since we started using Luminous for scheduling.',
   },
   {
     name: 'Emily Rodriguez',
@@ -29,35 +29,35 @@ const testimonials = [
     image: 'https://placehold.co/100x100.png',
     dataHint: 'person portrait',
     quote:
-      'As a non-technical founder, I was looking for a simple yet powerful tool. Luminous delivered on all fronts. The support team is also fantastic.',
+      'As a non-technical founder, I needed a simple tool to manage bookings. Luminous delivered perfectly. The support team is also fantastic.',
   },
   {
     name: 'David Lee',
     title: 'Freelance Designer',
     image: 'https://placehold.co/100x100.png',
     dataHint: 'man portrait glasses',
-    quote: 'The level of detail in the components is incredible. It saved me weeks of work and the final result is pixel-perfect. A must-have for any designer.',
+    quote: 'The client management features are surprisingly powerful. It saved me from buying a separate CRM tool. A must-have for any freelancer.',
   },
   {
     name: 'Jessica Williams',
     title: 'E-commerce Specialist',
     image: 'https://placehold.co/100x100.png',
     dataHint: 'woman smiling',
-    quote: 'Our online store\'s landing page, built with Luminous, has a conversion rate that\'s through the roof. It\'s fast, responsive, and looks amazing on all devices.',
+    quote: 'Our client consultations are now seamlessly organized with Luminous. It\'s fast, responsive, and looks amazing on all devices.',
   },
     {
     name: 'Alex Thompson',
     title: 'Indie Developer',
     image: 'https://placehold.co/100x100.png',
     dataHint: 'developer coding',
-    quote: 'The component-based architecture is a dream to work with. I could integrate my own custom components seamlessly.',
+    quote: 'The ability to see my entire week at a glance is a dream. I can integrate my own custom client notes seamlessly.',
   },
   {
     name: 'Olivia Martinez',
     title: 'Product Manager',
     image: 'https://placehold.co/100x100.png',
     dataHint: 'professional woman',
-    quote: 'Luminous helped us test new product ideas faster than ever. The ability to quickly spin up high-quality landing pages is invaluable.',
+    quote: 'Luminous helped us organize our user testing sessions faster than ever. The ability to quickly schedule and track participants is invaluable.',
   },
 ];
 
