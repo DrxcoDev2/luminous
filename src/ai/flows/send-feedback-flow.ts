@@ -13,7 +13,7 @@ import { saveFeedback, sendEmail } from '@/lib/firestore';
 
 const ADMIN_EMAIL = 'cristianmupe2021@gmail.com';
 
-export const FeedbackInputSchema = z.object({
+const FeedbackInputSchema = z.object({
   rating: z.number().min(1).max(5).describe('The star rating from 1 to 5.'),
   comment: z.string().optional().describe('The user\'s written feedback.'),
   userEmail: z.string().email().describe('The email of the user submitting feedback.'),
