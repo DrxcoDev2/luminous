@@ -51,9 +51,10 @@ export const updateClient = async (clientData: Client) => {
     try {
         const clientRef = doc(db, 'clients', clientData.id);
         // Exclude id from the data to be updated
-        const { id, ...dataToUpdate } = clientData;
+        const dataToUpdate = { ...clientData };
+        delete (dataToUpdate as Partial<Client>).id;
         
-        await updateDoc(clientRef, dataToUpdate as { [x: string]: any });
+        await updateDoc(clientRef, dataToUpdate);
     } catch (e) {
         console.error('Error updating document: ', e);
         throw new Error('Could not update client');
