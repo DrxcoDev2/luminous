@@ -104,6 +104,10 @@ export default function RegisterPage() {
       });
       router.push('/dashboard');
     } catch (error: any) {
+      if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
+        // User closed the popup, so we don't need to show an error.
+        return;
+      }
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',

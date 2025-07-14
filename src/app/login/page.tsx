@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Github, Loader2 } from 'lucide-react';
+import { FirebaseError } from 'firebase/app';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
@@ -82,6 +83,10 @@ export default function LoginPage() {
       });
       router.push('/dashboard');
     } catch (error: any) {
+      if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
+        // User closed the popup, so we don't need to show an error.
+        return;
+      }
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
