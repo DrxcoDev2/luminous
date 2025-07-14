@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building, Globe } from 'lucide-react';
+import { Loader2, Building, Globe, Hourglass } from 'lucide-react';
 import { getUserSettings, saveUserSettings } from '@/lib/user-settings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { timezones } from '@/lib/timezones';
@@ -21,6 +21,7 @@ import { getCountryFlag } from '@/lib/utils';
 const settingsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name must be at least 2 characters.' }).optional().or(z.literal('')),
   timezone: z.string().min(1, { message: 'Please select a timezone.' }),
+  notificationHours: z.coerce.number().min(0, { message: "Hours can't be negative."}).optional(),
 });
 
 export default function SettingsPage() {
@@ -34,6 +35,7 @@ export default function SettingsPage() {
     defaultValues: {
       companyName: '',
       timezone: 'UTC',
+      notificationHours: 24,
     },
   });
 
@@ -58,6 +60,7 @@ export default function SettingsPage() {
           form.reset({ 
             companyName: userSettings.companyName || '',
             timezone: userSettings.timezone || 'UTC',
+            notificationHours: userSettings.notificationHours ?? 24,
           });
         }
       } catch {
@@ -89,6 +92,7 @@ export default function SettingsPage() {
         userId: user.uid,
         companyName: values.companyName,
         timezone: values.timezone,
+        notificationHours: values.notificationHours,
       });
       toast({
         title: 'Success!',
@@ -150,7 +154,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>Timezone</FormLabel>
                         <div className="relative">
-                            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                                 <SelectTrigger className="pl-10">
@@ -170,6 +174,26 @@ export default function SettingsPage() {
                         </div>
                         <FormDescription>
                             All dates and times will be displayed in this timezone.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="notificationHours"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Appointment Notification</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Hourglass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input type="number" placeholder="24" {...field} className="pl-10" />
+                          </div>
+                        </FormControl>
+                         <FormDescription>
+                            Set how many hours in advance you want to be notified about an upcoming appointment.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

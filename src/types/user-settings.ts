@@ -5,4 +5,5 @@ export interface UserSettings {
   companyName?: string;
   timezone?: string;
   accountType?: 'individual' | 'business';
+  notificationHours?: number;
 }
