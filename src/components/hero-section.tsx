@@ -4,7 +4,7 @@ import { MoveRight } from 'lucide-react';
 
 export default function HeroSection() {
   return (
-    <section className="w-full py-24 md:py-32 lg:py-40">
+    <section className="w-full py-24 md:py-32 lg:py-40 lg:px-20">
       <div className="container px-4 grid items-center justify-center gap-8 md:grid-cols-2 md:gap-12">
         <div className="flex flex-col items-start space-y-4 text-center md:text-left">
           <div className="space-y-4">
