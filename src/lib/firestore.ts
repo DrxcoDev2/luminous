@@ -1,7 +1,9 @@
+
 import { db } from './firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import type { Client } from '@/types/client';
 import type { ClientNote } from '@/types/client-note';
+import type { Feedback } from '@/types/feedback';
 
 // Define the type for the data being added to Firestore, excluding the id
 type AddClientData = Omit<Client, 'id' | 'status' | 'userId' | 'createdAt' | 'notes'>;
@@ -137,3 +139,35 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
         throw new Error('Could not send email');
     }
 };
+
+
+// --- Feedback Functions ---
+
+export const saveFeedback = async (feedbackData: Omit<Feedback, 'id'>) => {
+    try {
+        await addDoc(collection(db, 'feedback'), {
+            ...feedbackData,
+            createdAt: serverTimestamp()
+        });
+    } catch(e) {
+        console.error('Error adding feedback: ', e);
+        throw new Error('Could not save feedback');
+    }
+};
+
+export const getFeedback = async (): Promise<Feedback[]> => {
+    try {
+        const q = query(collection(db, "feedback"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        const feedback: Feedback[] = [];
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const createdAt = data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now();
+            feedback.push({ id: doc.id, ...data, createdAt } as Feedback);
+        });
+        return feedback;
+    } catch (e) {
+        console.error("Error fetching feedback: ", e);
+        throw new Error("Could not fetch feedback");
+    }
+}

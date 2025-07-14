@@ -12,17 +12,120 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building, Globe, Hourglass } from 'lucide-react';
+import { Loader2, Building, Globe, Hourglass, Star, Send } from 'lucide-react';
 import { getUserSettings, saveUserSettings } from '@/lib/user-settings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { timezones } from '@/lib/timezones';
-import { getCountryFlag } from '@/lib/utils';
+import { getCountryFlag, cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+import { submitFeedback } from '@/ai/flows/send-feedback-flow';
 
 const settingsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name must be at least 2 characters.' }).optional().or(z.literal('')),
   timezone: z.string().min(1, { message: 'Please select a timezone.' }),
   notificationHours: z.coerce.number().min(0, { message: "Hours can't be negative."}).optional(),
 });
+
+const feedbackSchema = z.object({
+    rating: z.number().min(1, { message: 'Please select a rating.' }),
+    comment: z.string().optional(),
+});
+
+function FeedbackForm() {
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const form = useForm<z.infer<typeof feedbackSchema>>({
+        resolver: zodResolver(feedbackSchema),
+        defaultValues: { rating: 0, comment: '' },
+    });
+    const [hoveredRating, setHoveredRating] = useState(0);
+
+    async function onFeedbackSubmit(values: z.infer<typeof feedbackSchema>) {
+        if (!user) return;
+        setIsSubmitting(true);
+        try {
+            await submitFeedback({
+                rating: values.rating,
+                comment: values.comment || '',
+                userEmail: user.email || 'Anonymous',
+            });
+            toast({ title: 'Success!', description: 'Thank you for your feedback!' });
+            form.reset({ rating: 0, comment: '' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not submit feedback. Please try again.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    return (
+         <Card>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onFeedbackSubmit)}>
+                    <CardHeader>
+                        <CardTitle>Submit Feedback</CardTitle>
+                        <CardDescription>
+                            Have an opinion? We&apos;d love to hear it. Rate your experience with the app.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="rating"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Your Rating</FormLabel>
+                                    <FormControl>
+                                        <div 
+                                            className="flex gap-1"
+                                            onMouseLeave={() => setHoveredRating(0)}
+                                        >
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <Star
+                                                    key={star}
+                                                    className={cn(
+                                                        'h-8 w-8 cursor-pointer transition-colors',
+                                                        (hoveredRating >= star || field.value >= star)
+                                                            ? 'text-yellow-400 fill-yellow-400'
+                                                            : 'text-muted-foreground'
+                                                    )}
+                                                    onMouseEnter={() => setHoveredRating(star)}
+                                                    onClick={() => field.onChange(star)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="comment"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Comments (Optional)</FormLabel>
+                                    <FormControl>
+                                        <Textarea placeholder="Tell us what you think..." {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                    <CardFooter>
+                         <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                            Submit Feedback
+                        </Button>
+                    </CardFooter>
+                </form>
+            </Form>
+        </Card>
+    );
+}
+
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -110,8 +213,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8">
-      <Card className="w-full max-w-2xl mx-auto">
+    <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-8">
+      <Card>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardHeader>
@@ -211,6 +314,9 @@ export default function SettingsPage() {
           </form>
         </Form>
       </Card>
+
+      <FeedbackForm />
+
     </div>
   );
 }

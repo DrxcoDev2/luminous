@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { logOut } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, LayoutDashboard, Loader2, LogOut, Settings, UserCircle, Users, BarChartHorizontal } from 'lucide-react';
+import { Calendar, LayoutDashboard, Loader2, LogOut, Settings, UserCircle, Users, BarChartHorizontal, MessageSquare } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -65,6 +65,13 @@ export default function DashboardLayout({
     { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
   ];
 
+  const adminNavItems = [
+    { href: '/dashboard/feedback', icon: MessageSquare, label: 'Feedback' },
+  ]
+
+  const isAdmin = user.email === 'cristianmupe2021@gmail.com';
+
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -74,6 +81,14 @@ export default function DashboardLayout({
         <SidebarContent className="p-4">
           <SidebarMenu>
             {navItems.map((item) => (
+               <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton href={item.href} isActive={pathname === item.href}>
+                  <item.icon className="transition-transform duration-300 group-hover/menu-item:rotate-12" />
+                  {item.label}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+            {isAdmin && adminNavItems.map((item) => (
                <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton href={item.href} isActive={pathname === item.href}>
                   <item.icon className="transition-transform duration-300 group-hover/menu-item:rotate-12" />
