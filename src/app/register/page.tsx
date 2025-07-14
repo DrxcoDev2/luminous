@@ -105,12 +105,10 @@ export default function RegisterPage() {
   async function handleSocialLogin(provider: 'google' | 'github') {
     setIsSocialLoading(provider);
     try {
-        let userCredential;
-      if (provider === 'google') {
-        userCredential = await signInWithGoogle();
-      } else {
-        userCredential = await signInWithGitHub();
-      }
+        const userCredential =
+      provider === 'google'
+        ? await signInWithGoogle()
+        : await signInWithGitHub();
 
       const newUser = userCredential.user;
       if (newUser) {
@@ -120,7 +118,7 @@ export default function RegisterPage() {
     } catch (error: unknown) {
       let message = 'An unknown error occurred.';
       if (error instanceof FirebaseError) {
-         if (error.code === 'auth/popup-closed-by-user') {
+         if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
             // User closed the popup, so we don't need to show an error.
             setIsSocialLoading(null);
             return;
