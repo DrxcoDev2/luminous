@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useForm, useForm as useContactForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit, Home, Milestone, CalendarIcon, Globe, Clock, Info, MessageSquare, Send, Heart } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit, Home, Milestone, CalendarIcon, Globe, Clock, Info, MessageSquare, Send, Heart, Tag } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -394,6 +394,14 @@ export default function ClientsPage() {
                           {client.address && <div className="flex items-center gap-2"><Home className="h-4 w-4" /><span>{client.address}</span></div>}
                            {client.appointmentDateTime && <div className="flex items-center gap-2"><CalendarIcon className="h-4 w-4" /><span>{`${formatInTimezone(client.appointmentDateTime, 'PP')} @ ${formatInTimezone(client.appointmentDateTime, 'HH:mm')}`}</span></div>}
                        </div>
+                       {client.interests && client.interests.length > 0 && (
+                        <div className="mt-4 pt-4 border-t flex flex-wrap gap-2">
+                             {client.interests.map(interestId => {
+                                const interest = interests.find(i => i.id === interestId);
+                                return interest ? <Badge key={interest.id} variant="secondary">{interest.label}</Badge> : null;
+                             })}
+                        </div>
+                       )}
                     </Card>
                   )) : ( <div className="text-center h-24 flex items-center justify-center"><p>No clients yet. Add one to get started!</p></div> )}
                 </div>
@@ -407,7 +415,7 @@ export default function ClientsPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead className="hidden md:table-cell">Appointment</TableHead>
-                  <TableHead className="hidden lg:table-cell">Address</TableHead>
+                  <TableHead className="hidden lg:table-cell">Interests</TableHead>
                   <TableHead>Info</TableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
@@ -421,7 +429,14 @@ export default function ClientsPage() {
                             <TableCell className="font-medium">{client.name}</TableCell>
                             <TableCell>{client.email}</TableCell>
                              <TableCell className="hidden md:table-cell">{client.appointmentDateTime ? `${formatInTimezone(client.appointmentDateTime, 'PP')} @ ${formatInTimezone(client.appointmentDateTime, 'HH:mm')}` : 'N/A'}</TableCell>
-                            <TableCell className="hidden lg:table-cell">{client.address || 'N/A'}</TableCell>
+                            <TableCell className="hidden lg:table-cell">
+                                <div className="flex flex-wrap gap-1">
+                                    {client.interests && client.interests.length > 0 ? client.interests.map(interestId => {
+                                        const interest = interests.find(i => i.id === interestId);
+                                        return interest ? <Badge key={interest.id} variant="secondary">{interest.label}</Badge> : null;
+                                    }) : 'N/A'}
+                                </div>
+                            </TableCell>
                             <TableCell><Button variant="ghost" size="icon" onClick={() => handleEditOrViewClientClick(client)}><Info className="h-4 w-4" /></Button></TableCell>
                             <TableCell><ClientActions client={client} /></TableCell>
                         </TableRow>
