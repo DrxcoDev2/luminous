@@ -64,8 +64,10 @@ import { addClient, getClients, updateClient, deleteClient, sendEmail } from '@/
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
-import { format, parseISO } from 'date-fns';
+import { parseISO } from 'date-fns';
+import { format as formatTZ, toZonedTime } from 'date-fns-tz';
 import { Textarea } from '@/components/ui/textarea';
+import { getUserSettings } from '@/lib/user-settings';
 
 
 const clientSchema = z.object({
@@ -96,6 +98,7 @@ export default function ClientsPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
   const [contactingClient, setContactingClient] = useState<Client | null>(null);
+  const [timezone, setTimezone] = useState('UTC');
 
   const { toast } = useToast();
 
@@ -106,7 +109,13 @@ export default function ClientsPage() {
         return;
       };
       try {
-        const fetchedClients = await getClients(user.uid);
+        const [fetchedClients, settings] = await Promise.all([
+            getClients(user.uid),
+            getUserSettings(user.uid)
+        ]);
+        if(settings?.timezone) {
+            setTimezone(settings.timezone);
+        }
         setClients(fetchedClients);
       } catch (error) {
          toast({
@@ -142,6 +151,12 @@ export default function ClientsPage() {
       message: '',
     },
   });
+  
+  const formatInTimezone = (date: Date | string, fmt: string) => {
+    const dateObj = typeof date === 'string' ? parseISO(date) : date;
+    return formatTZ(toZonedTime(dateObj, timezone), fmt, { timeZone: timezone });
+  };
+
 
   useEffect(() => {
     if (editingClient) {
@@ -210,7 +225,7 @@ export default function ClientsPage() {
       postalCode: values.postalCode || undefined,
       nationality: values.nationality || undefined,
       dateOfBirth: values.dateOfBirth || undefined,
-      appointmentDateTime: values.appointmentDateTime || undefined,
+      appointmentDateTime: values.appointmentDateTime ? `${values.appointmentDateTime}:00` : undefined,
     };
 
 
@@ -342,7 +357,7 @@ export default function ClientsPage() {
                           <TableCell>{client.email}</TableCell>
                            <TableCell className="hidden md:table-cell">
                             {client.appointmentDateTime ? 
-                                `${format(parseISO(client.appointmentDateTime), 'PP')} @ ${format(parseISO(client.appointmentDateTime), 'HH:mm')}` 
+                                `${formatInTimezone(client.appointmentDateTime, 'PP')} @ ${formatInTimezone(client.appointmentDateTime, 'HH:mm')}` 
                                 : 'N/A'
                             }
                           </TableCell>

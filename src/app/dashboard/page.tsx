@@ -9,9 +9,11 @@ import type { Client } from '@/types/client';
 import { useAuth } from '@/contexts/auth-context';
 import { getClients } from '@/lib/firestore';
 import { format, parseISO, startOfWeek, endOfWeek, subWeeks, formatISO } from 'date-fns';
+import { format as formatTZ, toZonedTime } from 'date-fns-tz';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { getUserSettings } from '@/lib/user-settings';
 
 const chartConfig = {
   clients: {
@@ -25,6 +27,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [timezone, setTimezone] = useState('UTC');
 
   useEffect(() => {
     async function fetchClients() {
@@ -33,7 +36,13 @@ export default function DashboardPage() {
         return;
       }
       try {
-        const fetchedClients = await getClients(user.uid);
+        const [fetchedClients, settings] = await Promise.all([
+            getClients(user.uid),
+            getUserSettings(user.uid)
+        ]);
+        if(settings?.timezone) {
+            setTimezone(settings.timezone);
+        }
         setClients(fetchedClients);
       } catch (error) {
         console.error("Failed to fetch clients for dashboard", error);
@@ -43,6 +52,11 @@ export default function DashboardPage() {
     }
     fetchClients();
   }, [user]);
+
+  const formatInTimezone = (date: Date | string, fmt: string) => {
+    const dateObj = typeof date === 'string' ? parseISO(date) : date;
+    return formatTZ(toZonedTime(dateObj, timezone), fmt, { timeZone: timezone });
+  };
 
   const nextAppointment = useMemo(() => {
     const now = new Date();
@@ -133,7 +147,7 @@ export default function DashboardPage() {
             <div>
               <p className="font-semibold text-lg">{nextAppointment.name}</p>
               <p className="text-muted-foreground">
-                {format(parseISO(nextAppointment.appointmentDateTime!), 'PP HH:mm')}
+                {formatInTimezone(nextAppointment.appointmentDateTime!, 'PP HH:mm')}
               </p>
             </div>
           ) : (

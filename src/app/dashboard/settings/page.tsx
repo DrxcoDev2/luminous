@@ -7,17 +7,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building } from 'lucide-react';
+import { Loader2, Building, Globe } from 'lucide-react';
 import type { UserSettings } from '@/types/user-settings';
 import { getUserSettings, saveUserSettings } from '@/lib/user-settings';
 import { Skeleton } from '@/components/ui/skeleton';
+import { timezones } from '@/lib/timezones';
 
 const settingsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name must be at least 2 characters.' }).optional().or(z.literal('')),
+  timezone: z.string().min(1, { message: 'Please select a timezone.' }),
 });
 
 export default function SettingsPage() {
@@ -25,12 +28,12 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
-  const [settings, setSettings] = useState<UserSettings | null>(null);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       companyName: '',
+      timezone: 'UTC',
     },
   });
 
@@ -43,8 +46,10 @@ export default function SettingsPage() {
       try {
         const userSettings = await getUserSettings(user.uid);
         if (userSettings) {
-          setSettings(userSettings);
-          form.reset({ companyName: userSettings.companyName || '' });
+          form.reset({ 
+            companyName: userSettings.companyName || '',
+            timezone: userSettings.timezone || 'UTC',
+          });
         }
       } catch (error) {
         toast({
@@ -74,6 +79,7 @@ export default function SettingsPage() {
       await saveUserSettings(user.uid, {
         userId: user.uid,
         companyName: values.companyName,
+        timezone: values.timezone,
       });
       toast({
         title: 'Success!',
@@ -101,29 +107,64 @@ export default function SettingsPage() {
                 Manage your account and company settings.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
               {isFetching ? (
                 <div className="space-y-4">
                   <Skeleton className="h-8 w-1/4" />
                   <Skeleton className="h-10 w-full" />
+                   <Skeleton className="h-8 w-1/4" />
+                  <Skeleton className="h-10 w-full" />
                 </div>
               ) : (
-                <FormField
-                  control={form.control}
-                  name="companyName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company Name</FormLabel>
-                      <FormControl>
+                <>
+                  <FormField
+                    control={form.control}
+                    name="companyName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Company Name</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Your Company, Inc." {...field} className="pl-10" />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="timezone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Timezone</FormLabel>
                         <div className="relative">
-                          <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input placeholder="Your Company, Inc." {...field} className="pl-10" />
+                            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                                <SelectTrigger className="pl-10">
+                                <SelectValue placeholder="Select your timezone" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {timezones.map(tz => (
+                                <SelectItem key={tz.value} value={tz.value}>
+                                    {tz.label}
+                                </SelectItem>
+                                ))}
+                            </SelectContent>
+                            </Select>
                         </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormDescription>
+                            All dates and times will be displayed in this timezone.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
               )}
             </CardContent>
             <CardFooter className="border-t px-6 py-4">

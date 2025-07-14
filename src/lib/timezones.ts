@@ -1,0 +1,38 @@
+
+export const timezones = [
+  { label: 'Madrid (Europe/Madrid)', value: 'Europe/Madrid' },
+  { label: 'Belgium (Europe/Brussels)', value: 'Europe/Brussels' },
+  { label: 'Istanbul (Europe/Istanbul)', value: 'Europe/Istanbul' },
+  { label: 'London (Europe/London)', value: 'Europe/London' },
+  { label: 'Washington, DC (America/New_York)', value: 'America/New_York' },
+  { label: 'Cupertino (America/Los_Angeles)', value: 'America/Los_Angeles' },
+  { label: 'Botanico (America/Bogota)', value: 'America/Bogota' }, // Assuming Bogota for "Botanico"
+  { label: 'Beijing (Asia/Shanghai)', value: 'Asia/Shanghai' },
+  { label: 'Colombo (Asia/Colombo)', value: 'Asia/Colombo' },
+  { label: 'Riyadh (Asia/Riyadh)', value: 'Asia/Riyadh' },
+  { label: 'Cape Verde (Atlantic/Cape_Verde)', value: 'Atlantic/Cape_Verde' },
+  { label: 'Mexico City (America/Mexico_City)', value: 'America/Mexico_City' },
+  { label: 'Guatemala City (America/Guatemala)', value: 'America/Guatemala' },
+  { label: 'Caracas (America/Caracas)', value: 'America/Caracas' },
+  { label: 'Brasilia (America/Sao_Paulo)', value: 'America/Sao_Paulo' },
+  { label: 'Sao Paulo (America/Sao_Paulo)', value: 'America/Sao_Paulo' },
+  { label: 'Santiago de Chile (America/Santiago)', value: 'America/Santiago' },
+  { label: 'Canary Islands (Atlantic/Canary)', value: 'Atlantic/Canary' },
+  { label: 'Prague (Europe/Prague)', value: 'Europe/Prague' },
+  { label: 'Moscow (Europe/Moscow)', value: 'Europe/Moscow' },
+  { label: 'Ottawa (America/Toronto)', value: 'America/Toronto' },
+  { label: 'Alaska (America/Anchorage)', value: 'America/Anchorage' },
+  { label: 'Nuuk (America/Nuuk)', value: 'America/Nuuk' }, // Corrected from Nukkah
+  { label: 'New Delhi (Asia/Kolkata)', value: 'Asia/Kolkata' },
+  { label: 'Java (Asia/Jakarta)', value: 'Asia/Jakarta' }, // Assuming Jakarta for Java
+  { label: 'Sydney (Australia/Sydney)', value: 'Australia/Sydney' },
+  { label: 'Western Australia (Australia/Perth)', value: 'Australia/Perth' },
+  { label: 'Auckland (Pacific/Auckland)', value: 'Pacific/Auckland' },
+  { label: 'Caribbean (America/Port_of_Spain)', value: 'America/Port_of_Spain' },
+  { label: 'French Polynesia (Pacific/Tahiti)', value: 'Pacific/Tahiti' },
+  { label: 'Tokyo (Asia/Tokyo)', value: 'Asia/Tokyo' },
+  { label: 'Hong Kong (Asia/Hong_Kong)', value: 'Asia/Hong_Kong' },
+  { label: 'Singapore (Asia/Singapore)', value: 'Asia/Singapore' },
+  { label: 'Mogadishu (Africa/Mogadishu)', value: 'Africa/Mogadishu' },
+  { label: 'Madagascar (Indian/Antananarivo)', value: 'Indian/Antananarivo' },
+];
