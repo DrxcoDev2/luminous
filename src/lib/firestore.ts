@@ -1,9 +1,10 @@
 
 import { db } from './firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, where, orderBy, Timestamp, arrayUnion, arrayRemove, getDoc, writeBatch } from 'firebase/firestore';
 import type { Client } from '@/types/client';
 import type { ClientNote } from '@/types/client-note';
 import type { Feedback } from '@/types/feedback';
+import type { Team, TeamMember } from '@/types/team';
 
 // Define the type for the data being added to Firestore, excluding the id
 type AddClientData = Omit<Client, 'id' | 'status' | 'userId' | 'createdAt' | 'notes'>;
@@ -171,3 +172,93 @@ export const getFeedback = async (): Promise<Feedback[]> => {
         throw new Error("Could not fetch feedback");
     }
 }
+
+// --- Team Functions ---
+
+// Function to find a user by their email.
+export const findUserByEmail = async (email: string): Promise<TeamMember | null> => {
+    try {
+        const q = query(collection(db, 'userSettings'), where('email', '==', email));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+            return null;
+        }
+        const userDoc = querySnapshot.docs[0];
+        const userData = userDoc.data();
+        return {
+            uid: userDoc.id,
+            email: userData.email,
+            name: userData.name || '',
+            role: 'member',
+        };
+    } catch (e) {
+        console.error("Error finding user by email: ", e);
+        throw new Error("Could not find user");
+    }
+};
+
+// Function to create a new team
+export const createTeam = async (ownerUid: string, ownerEmail: string, ownerName: string): Promise<string> => {
+    try {
+        const teamRef = await addDoc(collection(db, 'teams'), {
+            ownerId: ownerUid,
+            createdAt: serverTimestamp(),
+            members: [
+                { uid: ownerUid, email: ownerEmail, name: ownerName, role: 'owner' }
+            ],
+        });
+        return teamRef.id;
+    } catch (e) {
+        console.error('Error creating team: ', e);
+        throw new Error('Could not create team');
+    }
+};
+
+// Function to get team details
+export const getTeam = async (teamId: string): Promise<Team> => {
+    try {
+        const teamRef = doc(db, 'teams', teamId);
+        const docSnap = await getDoc(teamRef);
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() } as Team;
+        }
+        throw new Error('Team not found');
+    } catch (e) {
+        console.error('Error getting team: ', e);
+        throw new Error('Could not get team');
+    }
+};
+
+// Function to add a new member to a team
+export const addTeamMember = async (teamId: string, member: TeamMember) => {
+    try {
+        const teamRef = doc(db, 'teams', teamId);
+        await updateDoc(teamRef, {
+            members: arrayUnion({ ...member, role: 'member' }),
+        });
+    } catch (e) {
+        console.error('Error adding team member: ', e);
+        throw new Error('Could not add team member');
+    }
+};
+
+// Function to remove a member from a team
+export const removeTeamMember = async (teamId: string, memberUid: string) => {
+    try {
+        const teamRef = doc(db, 'teams', teamId);
+        const teamSnap = await getDoc(teamRef);
+        if (!teamSnap.exists()) throw new Error('Team not found');
+        
+        const teamData = teamSnap.data() as Team;
+        const memberToRemove = teamData.members.find(m => m.uid === memberUid);
+
+        if (memberToRemove) {
+            await updateDoc(teamRef, {
+                members: arrayRemove(memberToRemove),
+            });
+        }
+    } catch (e) {
+        console.error('Error removing team member: ', e);
+        throw new Error('Could not remove team member');
+    }
+};

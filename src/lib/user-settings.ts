@@ -29,7 +29,7 @@ export const getUserSettings = async (userId: string): Promise<UserSettings | nu
  * @param userId - The ID of the user.
  * @param settings - The settings object to save.
  */
-export const saveUserSettings = async (userId: string, settings: Omit<UserSettings, 'id'>) => {
+export const saveUserSettings = async (userId: string, settings: Partial<Omit<UserSettings, 'id'>>) => {
   try {
     const docRef = doc(db, 'userSettings', userId);
     // Use setDoc with { merge: true } to create or update the document

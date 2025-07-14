@@ -66,7 +66,9 @@ export default function RegisterPage() {
       if(newUser) {
         await saveUserSettings(newUser.uid, {
             userId: newUser.uid,
-            accountType: values.accountType
+            accountType: values.accountType,
+            name: values.name,
+            email: values.email,
         })
       }
       // The redirection is now handled by the AuthProvider
@@ -103,10 +105,20 @@ export default function RegisterPage() {
   async function handleSocialLogin(provider: 'google' | 'github') {
     setIsSocialLoading(provider);
     try {
+        let userCredential;
       if (provider === 'google') {
-        await signInWithGoogle();
+        userCredential = await signInWithGoogle();
       } else {
-        await signInWithGitHub();
+        userCredential = await signInWithGitHub();
+      }
+
+      const newUser = userCredential.user;
+      if (newUser) {
+          await saveUserSettings(newUser.uid, {
+              userId: newUser.uid,
+              name: newUser.displayName,
+              email: newUser.email,
+          });
       }
       // The redirection is now handled by the AuthProvider
     } catch (error: unknown) {

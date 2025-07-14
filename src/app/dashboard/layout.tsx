@@ -60,6 +60,7 @@ export default function DashboardLayout({
   const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/dashboard/clients', icon: Users, label: 'Clients' },
+    { href: '/dashboard/team', icon: Users, label: 'Team' },
     { href: '/dashboard/analytics', icon: BarChartHorizontal, label: 'Analytics' },
     { href: '/dashboard/calendar', icon: Calendar, label: 'Calendar' },
     { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
