@@ -1,7 +1,10 @@
 
 'use client';
 
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users } from 'lucide-react';
+import Link from 'next/link';
 
 export default function DashboardPage() {
   return (
@@ -14,9 +17,17 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p>
-            The sidebar is collapsible and responsive. Try resizing your browser window to see it in action.
-          </p>
+          <div className="space-y-4">
+            <p>
+              The sidebar is collapsible and responsive. Try resizing your browser window to see it in action.
+            </p>
+            <Button asChild>
+              <Link href="/dashboard/clients">
+                <Users className="mr-2" />
+                View All Clients
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
