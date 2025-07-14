@@ -99,6 +99,9 @@ export default function DashboardLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
+        <div className="sticky top-0 z-10 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 text-center text-sm p-2 font-medium">
+            This is not the official version, it was created for feedback only.
+        </div>
         <header className="flex items-center justify-between p-4 border-b">
           <SidebarTrigger />
           <h1 className="text-xl md:text-2xl font-semibold capitalize flex-1 text-center md:text-left">{pathname.split('/').pop()?.replace('-', ' ') || 'Dashboard'}</h1>
