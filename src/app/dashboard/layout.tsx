@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { FirebaseError } from 'firebase/app';
 
 export default function DashboardLayout({
   children,
@@ -34,11 +35,15 @@ export default function DashboardLayout({
   const handleLogout = async () => {
     try {
       await logOut();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      let message = 'An unknown error occurred.';
+      if (error instanceof FirebaseError) {
+        message = error.message;
+      }
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
-        description: error.message,
+        description: message,
       });
     }
   };

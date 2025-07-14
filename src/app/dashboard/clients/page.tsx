@@ -647,8 +647,7 @@ export default function ClientsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the client
-              &quot;{deletingClient?.name}&quot; and remove their data from our servers.
+              This action cannot be undone. This will permanently delete the client &quot;{deletingClient?.name}&quot; and remove their data from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

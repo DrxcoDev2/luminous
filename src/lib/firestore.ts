@@ -8,7 +8,7 @@ type AddClientData = Omit<Client, 'id' | 'status' | 'userId' | 'createdAt'>;
 // Function to add a new client to the 'clients' collection
 export const addClient = async (clientData: AddClientData, userId: string) => {
   try {
-    const dataWithUserAndTimestamp: any = {
+    const dataWithUserAndTimestamp = {
         ...clientData,
         userId,
         status: 'Active',
@@ -51,8 +51,8 @@ export const updateClient = async (clientData: Client) => {
     try {
         const clientRef = doc(db, 'clients', clientData.id);
         // Exclude id from the data to be updated
-        const { id: _, ...dataToUpdate } = clientData;
-
+        const { id, ...dataToUpdate } = clientData;
+        
         await updateDoc(clientRef, dataToUpdate as { [x: string]: any });
     } catch (e) {
         console.error('Error updating document: ', e);

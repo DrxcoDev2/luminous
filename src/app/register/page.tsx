@@ -56,7 +56,7 @@ export default function RegisterPage() {
     try {
       await signUp(values.email, values.password);
       // The redirection is now handled by the AuthProvider
-    } catch (error: any) {
+    } catch (error: unknown) {
       let description = 'An unexpected error occurred. Please try again.';
       if (error instanceof FirebaseError) {
         switch (error.code) {
@@ -95,16 +95,20 @@ export default function RegisterPage() {
         await signInWithGitHub();
       }
       // The redirection is now handled by the AuthProvider
-    } catch (error: any) {
-      if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
-        // User closed the popup, so we don't need to show an error.
-        setIsSocialLoading(null);
-        return;
+    } catch (error: unknown) {
+      let message = 'An unknown error occurred.';
+      if (error instanceof FirebaseError) {
+         if (error.code === 'auth/popup-closed-by-user') {
+            // User closed the popup, so we don't need to show an error.
+            setIsSocialLoading(null);
+            return;
+         }
+        message = error.message;
       }
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
-        description: error.message,
+        description: message,
       });
     } finally {
       setIsSocialLoading(null);
@@ -174,7 +178,7 @@ export default function RegisterPage() {
               <p className="text-xs text-muted-foreground text-center">
                 By creating an account, you agree to our{' '}
                 <Link href="/policy" className="underline hover:text-primary">
-                  Terms & Conditions
+                  Terms &amp; Conditions
                 </Link>
                 .
               </p>
