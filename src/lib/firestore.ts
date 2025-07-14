@@ -40,15 +40,13 @@ export const getClients = async (userId: string): Promise<Client[]> => {
             // If user is in a team, fetch all clients for that team
             q = query(
                 collection(db, "clients"), 
-                where("teamId", "==", settings.teamId),
-                orderBy("createdAt", "desc")
+                where("teamId", "==", settings.teamId)
             );
         } else {
             // Otherwise, fetch only the user's own clients
             q = query(
                 collection(db, "clients"), 
-                where("userId", "==", userId),
-                orderBy("createdAt", "desc")
+                where("userId", "==", userId)
             );
         }
 
@@ -59,6 +57,14 @@ export const getClients = async (userId: string): Promise<Client[]> => {
             const createdAt = data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now();
             clients.push({ id: doc.id, ...data, createdAt } as Client);
         });
+        
+        // Sort clients on the client-side to avoid index issues
+        clients.sort((a, b) => {
+            const dateA = a.createdAt?.toDate()?.getTime() || 0;
+            const dateB = b.createdAt?.toDate()?.getTime() || 0;
+            return dateB - dateA;
+        });
+
         return clients;
     } catch (e) {
         console.error("Error fetching documents: ", e);
