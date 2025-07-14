@@ -177,10 +177,13 @@ export default function ClientsPage() {
     }
     setIsLoading(true);
 
-    const clientData = {
-      ...values,
-      dateOfBirth: values.dateOfBirth ? values.dateOfBirth.toISOString().split('T')[0] : undefined,
-    };
+    const clientData: any = { ...values };
+    if (values.dateOfBirth) {
+      clientData.dateOfBirth = values.dateOfBirth.toISOString().split('T')[0];
+    } else {
+      delete clientData.dateOfBirth;
+    }
+
 
     try {
       if (editingClient) {
