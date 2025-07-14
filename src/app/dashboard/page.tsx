@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Calendar, ArrowRight, BarChart } from 'lucide-react';
+import { Users, Calendar, ArrowRight, BarChart, Settings, Building, Globe } from 'lucide-react';
 import Link from 'next/link';
 import type { Client } from '@/types/client';
 import { useAuth } from '@/contexts/auth-context';
@@ -14,6 +14,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { getUserSettings } from '@/lib/user-settings';
+import type { UserSettings } from '@/types/user-settings';
+import { timezones } from '@/lib/timezones';
 
 const chartConfig = {
   clients: {
@@ -26,31 +28,33 @@ const chartConfig = {
 export default function DashboardPage() {
   const { user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timezone, setTimezone] = useState('UTC');
 
   useEffect(() => {
-    async function fetchClients() {
+    async function fetchDashboardData() {
       if (!user) {
         setIsLoading(false);
         return;
       }
       try {
-        const [fetchedClients, settings] = await Promise.all([
+        const [fetchedClients, fetchedSettings] = await Promise.all([
             getClients(user.uid),
             getUserSettings(user.uid)
         ]);
-        if(settings?.timezone) {
-            setTimezone(settings.timezone);
+        if(fetchedSettings?.timezone) {
+            setTimezone(fetchedSettings.timezone);
         }
+        setSettings(fetchedSettings);
         setClients(fetchedClients);
       } catch (error) {
-        console.error("Failed to fetch clients for dashboard", error);
+        console.error("Failed to fetch dashboard data", error);
       } finally {
         setIsLoading(false);
       }
     }
-    fetchClients();
+    fetchDashboardData();
   }, [user]);
 
   const formatInTimezone = (date: Date | string, fmt: string) => {
@@ -162,6 +166,54 @@ export default function DashboardPage() {
     </Link>
   );
 
+  const SettingsCard = () => {
+    const timezoneLabel = timezones.find(tz => tz.value === settings?.timezone)?.label.split('(')[0].trim() || settings?.timezone;
+    return (
+        <Link href="/dashboard/settings" className="block group">
+           <Card className="h-full flex flex-col justify-between hover:bg-accent transition-colors">
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <CardTitle className="text-xl">Company Settings</CardTitle>
+                    <Settings className="h-6 w-6 text-muted-foreground" />
+                </div>
+                 <CardDescription>
+                    Your company info and timezone.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                            <Skeleton className="h-5 w-5 rounded-full" />
+                            <Skeleton className="h-5 w-32" />
+                        </div>
+                         <div className="flex items-center gap-2">
+                            <Skeleton className="h-5 w-5 rounded-full" />
+                            <Skeleton className="h-5 w-24" />
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-2 text-sm">
+                       <div className="flex items-center gap-2 text-muted-foreground">
+                            <Building className="h-4 w-4" />
+                            <span className="font-medium text-foreground">{settings?.companyName || 'Not set'}</span>
+                       </div>
+                       <div className="flex items-center gap-2 text-muted-foreground">
+                            <Globe className="h-4 w-4" />
+                            <span className="font-medium text-foreground">{timezoneLabel || 'UTC'}</span>
+                       </div>
+                    </div>
+                )}
+                <div className="flex items-center text-sm text-muted-foreground mt-4 group-hover:text-primary">
+                    Manage settings
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </div>
+            </CardContent>
+           </Card>
+        </Link>
+    );
+};
+
   const WeeklyClientsChart = () => (
     <Card className="lg:col-span-2">
        <CardHeader>
@@ -190,11 +242,13 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-[minmax(180px,auto)]">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 auto-rows-[minmax(200px,auto)]">
         <WeeklyClientsChart />
         <TotalClientsCard />
         <CalendarCard />
+        <SettingsCard />
       </div>
     </div>
   );
 }
+
