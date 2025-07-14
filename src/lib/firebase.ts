@@ -3,12 +3,14 @@ import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/a
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig: FirebaseOptions = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+  apiKey: "AIzaSyDX_iPbiSkMO4_IEEtCH803Bqjnc73MNvM",
+  authDomain: "luminous-bc20e.firebaseapp.com",
+  projectId: "luminous-bc20e",
+  storageBucket: "luminous-bc20e.firebasestorage.app",
+  messagingSenderId: "646540049073",
+  appId: "1:646540049073:web:d47618ceda640c855d0090",
+  measurementId: "G-8XEP767JLM"
+
 };
 
 // Initialize Firebase

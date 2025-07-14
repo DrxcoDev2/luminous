@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { FirebaseError } from 'firebase/app';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -59,10 +60,29 @@ export default function RegisterPage() {
       });
       router.push('/dashboard');
     } catch (error: any) {
+      let description = 'An unexpected error occurred. Please try again.';
+      if (error instanceof FirebaseError) {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            description = 'This email address is already in use by another account.';
+            break;
+          case 'auth/weak-password':
+            description = 'The password is too weak. Please choose a stronger password.';
+            break;
+          case 'auth/invalid-email':
+            description = 'The email address is not valid. Please check and try again.';
+            break;
+          case 'auth/operation-not-allowed':
+             description = 'Email/password sign up is not enabled. Please contact support.';
+             break;
+          default:
+            description = error.message;
+        }
+      }
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
-        description: error.message,
+        description,
       });
     } finally {
       setIsLoading(false);
