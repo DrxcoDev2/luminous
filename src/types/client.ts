@@ -14,6 +14,7 @@ export interface Client {
   nationality?: string;
   dateOfBirth?: string; // Storing as ISO string e.g., "YYYY-MM-DD"
   appointmentDateTime?: string; // Storing as ISO string
+  interests?: string[]; // Array of interest tags
   createdAt: Timestamp;
   notes?: ClientNote[]; // Notes will be loaded on demand into this optional array
 }

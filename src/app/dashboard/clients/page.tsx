@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useForm, useForm as useContactForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit, Home, Milestone, CalendarIcon, Globe, Clock, Info, MessageSquare, Send } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit, Home, Milestone, CalendarIcon, Globe, Clock, Info, MessageSquare, Send, Heart } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -71,7 +71,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { getUserSettings } from '@/lib/user-settings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 
+
+const interests = [
+  { id: 'services', label: 'Services' },
+  { id: 'suppliers', label: 'Suppliers' },
+  { id: 'customers', label: 'Customers' },
+  { id: 'learning', label: 'Learning' },
+  { id: 'promotion', label: 'Promotion' },
+  { id: 'mentoring', label: 'Mentoring' },
+] as const;
 
 const clientSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -82,6 +92,7 @@ const clientSchema = z.object({
   nationality: z.string().optional(),
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date must be in YYYY-MM-DD format." }).optional().or(z.literal('')),
   appointmentDateTime: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, { message: "Datetime must be in YYYY-MM-DDTHH:mm format."}).optional().or(z.literal('')),
+  interests: z.array(z.string()).optional(),
 });
 
 const contactSchema = z.object({
@@ -143,7 +154,7 @@ export default function ClientsPage() {
 
   const form = useForm<z.infer<typeof clientSchema>>({
     resolver: zodResolver(clientSchema),
-    defaultValues: { name: '', email: '', phone: '', address: '', postalCode: '', nationality: '', dateOfBirth: '', appointmentDateTime: '' },
+    defaultValues: { name: '', email: '', phone: '', address: '', postalCode: '', nationality: '', dateOfBirth: '', appointmentDateTime: '', interests: [] },
   });
   
   const contactForm = useContactForm<z.infer<typeof contactSchema>>({
@@ -173,10 +184,11 @@ export default function ClientsPage() {
         nationality: selectedClient.nationality || '',
         dateOfBirth: selectedClient.dateOfBirth || '',
         appointmentDateTime: selectedClient.appointmentDateTime ? formatInTimezone(selectedClient.appointmentDateTime, "yyyy-MM-dd'T'HH:mm") : '',
+        interests: selectedClient.interests || [],
       });
       fetchNotes(selectedClient.id);
     } else {
-      form.reset({ name: '', email: '', phone: '', address: '', postalCode: '', nationality: '', dateOfBirth: '', appointmentDateTime: '' });
+      form.reset({ name: '', email: '', phone: '', address: '', postalCode: '', nationality: '', dateOfBirth: '', appointmentDateTime: '', interests: [] });
       setNotes([]);
     }
   }, [selectedClient, form, formatInTimezone]);
@@ -206,11 +218,12 @@ export default function ClientsPage() {
     if (!user) return toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in to manage clients.' });
     setIsLoading(true);
 
-    const clientData: Omit<Client, 'id' | 'status' | 'userId'| 'createdAt'> & { id?: string } = {
+    const clientData = {
       name: values.name, email: values.email, phone: values.phone || undefined,
       address: values.address || undefined, postalCode: values.postalCode || undefined,
       nationality: values.nationality || undefined, dateOfBirth: values.dateOfBirth || undefined,
       appointmentDateTime: values.appointmentDateTime ? values.appointmentDateTime : undefined,
+      interests: values.interests || [],
     };
 
     try {
@@ -447,6 +460,59 @@ export default function ClientsPage() {
                       <FormField control={form.control} name="dateOfBirth" render={({ field }) => (<FormItem><FormLabel>Date of birth (Optional)</FormLabel><FormControl><div className="relative"><CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="date" placeholder="YYYY-MM-DD" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
                       <FormField control={form.control} name="appointmentDateTime" render={({ field }) => (<FormItem><FormLabel>Appointment Time (Optional)</FormLabel><FormControl><div className="relative"><Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="datetime-local" placeholder="YYYY-MM-DDTHH:mm" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
                     </div>
+                     <FormField
+                      control={form.control}
+                      name="interests"
+                      render={() => (
+                        <FormItem className="mt-4 pt-4 border-t col-span-1 md:col-span-2">
+                            <div className="mb-4">
+                                <FormLabel className="text-base flex items-center gap-2"><Heart className="h-4 w-4"/> Interests</FormLabel>
+                                <FormMessage />
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            {interests.map((item) => (
+                                <FormField
+                                key={item.id}
+                                control={form.control}
+                                name="interests"
+                                render={({ field }) => {
+                                    return (
+                                    <FormItem
+                                        key={item.id}
+                                        className="flex flex-row items-start space-x-3 space-y-0"
+                                    >
+                                        <FormControl>
+                                        <Checkbox
+                                            checked={field.value?.includes(item.id)}
+                                            onCheckedChange={(checked) => {
+                                            return checked
+                                                ? field.onChange([...(field.value || []), item.id])
+                                                : field.onChange(
+                                                    field.value?.filter(
+                                                    (value) => value !== item.id
+                                                    )
+                                                )
+                                            }}
+                                        />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">
+                                        {item.label}
+                                        </FormLabel>
+                                    </FormItem>
+                                    )
+                                }}
+                                />
+                            ))}
+                           </div>
+                           <div className="mt-4 flex flex-wrap gap-2">
+                             {form.watch('interests')?.map(interestId => {
+                                const interest = interests.find(i => i.id === interestId);
+                                return interest ? <Badge key={interest.id} variant="secondary">{interest.label}</Badge> : null;
+                             })}
+                           </div>
+                        </FormItem>
+                      )}
+                    />
                   </ScrollArea>
                   <DialogFooter className="pt-4 border-t mt-auto">
                     <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
