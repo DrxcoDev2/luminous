@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search, UserPlus, X, UserX, Crown, User } from 'lucide-react';
+import { Loader2, Search, UserPlus, UserX, Crown, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   AlertDialog,
@@ -55,7 +55,7 @@ export default function TeamPage() {
     defaultValues: { email: '' },
   });
 
-  const isOwner = teamMembers.find(m => m.uid === user?.uid)?.role === 'owner';
+  const isOwner = teamId ? teamMembers.find(m => m.uid === user?.uid)?.role === 'owner' : true;
 
   useEffect(() => {
     async function loadTeam() {
@@ -69,11 +69,14 @@ export default function TeamPage() {
           setTeamId(team.id);
         }
       } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error loading team',
-          description: 'Could not fetch your team information. Please try again.',
-        });
+        // If team not found, it's not a critical error, just means user has no team.
+        if (!(error instanceof Error && error.message.includes('Team not found'))) {
+          toast({
+            variant: 'destructive',
+            title: 'Error loading team',
+            description: 'Could not fetch your team information. Please try again.',
+          });
+        }
       } finally {
         setIsLoading(false);
       }
@@ -116,7 +119,7 @@ export default function TeamPage() {
       if (!currentTeamId) {
         // Create a new team if one doesn't exist
         const newTeamId = await createTeam(user.uid, user.email || '', user.displayName || 'Owner');
-        await saveUserSettings(user.uid, { userId: user.uid, teamId: newTeamId });
+        await saveUserSettings(user.uid, { teamId: newTeamId });
         setTeamId(newTeamId);
         currentTeamId = newTeamId;
         // Add owner to the team members list visually
@@ -124,7 +127,7 @@ export default function TeamPage() {
       }
 
       await addTeamMember(currentTeamId!, searchedUser);
-      await saveUserSettings(searchedUser.uid, { userId: searchedUser.uid, teamId: currentTeamId! });
+      await saveUserSettings(searchedUser.uid, { teamId: currentTeamId! });
       
       setTeamMembers(prev => [...prev, { ...searchedUser, role: 'member' }]);
       setSearchedUser(null);
@@ -147,7 +150,7 @@ export default function TeamPage() {
     setIsRemoving(userToRemove.uid);
     try {
       await removeTeamMember(teamId, userToRemove.uid);
-       await saveUserSettings(userToRemove.uid, { userId: userToRemove.uid, teamId: null });
+       await saveUserSettings(userToRemove.uid, { teamId: null });
       setTeamMembers(prev => prev.filter(m => m.uid !== userToRemove.uid));
       toast({ title: 'Success!', description: `${userToRemove.name || userToRemove.email} has been removed from the team.` });
     } catch (error) {
@@ -190,7 +193,7 @@ export default function TeamPage() {
                   <FormItem className="flex-1">
                     <FormLabel className="sr-only">Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter member's email address" {...field} />
+                      <Input placeholder="Enter member's email address" {...field} disabled={!isOwner} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -292,3 +295,5 @@ export default function TeamPage() {
     </div>
   );
 }
+
+    
