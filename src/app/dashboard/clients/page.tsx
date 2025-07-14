@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit, Home, Milestone, CalendarIcon, Globe } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit, Home, Milestone, CalendarIcon, Globe, Clock } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -78,6 +78,7 @@ const clientSchema = z.object({
   postalCode: z.string().optional(),
   nationality: z.string().optional(),
   dateOfBirth: z.date().optional(),
+  appointmentDateTime: z.date().optional(),
 });
 
 export default function ClientsPage() {
@@ -124,6 +125,7 @@ export default function ClientsPage() {
       postalCode: '',
       nationality: '',
       dateOfBirth: undefined,
+      appointmentDateTime: undefined,
     },
   });
 
@@ -137,6 +139,7 @@ export default function ClientsPage() {
         postalCode: editingClient.postalCode || '',
         nationality: editingClient.nationality || '',
         dateOfBirth: editingClient.dateOfBirth ? new Date(editingClient.dateOfBirth) : undefined,
+        appointmentDateTime: editingClient.appointmentDateTime ? new Date(editingClient.appointmentDateTime) : undefined,
       });
     } else {
       form.reset({
@@ -147,6 +150,7 @@ export default function ClientsPage() {
         postalCode: '',
         nationality: '',
         dateOfBirth: undefined,
+        appointmentDateTime: undefined,
       });
     }
   }, [editingClient, form]);
@@ -177,11 +181,20 @@ export default function ClientsPage() {
     }
     setIsLoading(true);
 
-    const clientData: any = { ...values };
+    const clientData: Omit<Client, 'id' | 'status' | 'userId'> & { id?: string } = {
+      name: values.name,
+      email: values.email,
+      phone: values.phone,
+      address: values.address,
+      postalCode: values.postalCode,
+      nationality: values.nationality,
+    };
+
     if (values.dateOfBirth) {
       clientData.dateOfBirth = values.dateOfBirth.toISOString().split('T')[0];
-    } else {
-      delete clientData.dateOfBirth;
+    }
+    if (values.appointmentDateTime) {
+      clientData.appointmentDateTime = values.appointmentDateTime.toISOString();
     }
 
 
@@ -197,7 +210,7 @@ export default function ClientsPage() {
           id: newClientId, 
           ...clientData,
           status: 'Active', 
-          userId: user.uid 
+          userId: user.uid,
         };
         setClients(prev => [newClient, ...prev]);
         toast({ title: 'Success!', description: 'New client has been added.' });
@@ -242,7 +255,8 @@ export default function ClientsPage() {
         <TableRow key={i}>
           <TableCell><Skeleton className="h-4 w-32" /></TableCell>
           <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-          <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
+          <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-36" /></TableCell>
+          <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-36" /></TableCell>
           <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
           <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
           <TableCell><Skeleton className="h-8 w-8" /></TableCell>
@@ -272,8 +286,9 @@ export default function ClientsPage() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead className="hidden md:table-cell">Phone</TableHead>
+                <TableHead className="hidden md:table-cell">Appointment</TableHead>
                 <TableHead className="hidden md:table-cell">Address</TableHead>
+                <TableHead className="hidden md:table-cell">Phone</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
@@ -286,8 +301,11 @@ export default function ClientsPage() {
                       <TableRow key={client.id}>
                           <TableCell className="font-medium">{client.name}</TableCell>
                           <TableCell>{client.email}</TableCell>
-                          <TableCell className="hidden md:table-cell">{client.phone || 'N/A'}</TableCell>
+                           <TableCell className="hidden md:table-cell">
+                            {client.appointmentDateTime ? format(new Date(client.appointmentDateTime), 'PPp') : 'N/A'}
+                          </TableCell>
                           <TableCell className="hidden md:table-cell">{client.address || 'N/A'}</TableCell>
+                          <TableCell className="hidden md:table-cell">{client.phone || 'N/A'}</TableCell>
                           <TableCell>
                             <Badge variant={client.status === 'Active' ? 'default' : 'secondary'}>
                               {client.status}
@@ -318,7 +336,7 @@ export default function ClientsPage() {
                       </TableRow>
                   )) : (
                       <TableRow>
-                          <TableCell colSpan={6} className="text-center h-24">
+                          <TableCell colSpan={7} className="text-center h-24">
                               No clients yet. Add one to get started!
                           </TableCell>
                       </TableRow>
@@ -334,7 +352,7 @@ export default function ClientsPage() {
         setIsFormDialogOpen(open);
         if (!open) setEditingClient(null);
       }}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editingClient ? 'Edit Client' : 'Add New Client'}</DialogTitle>
             <DialogDescription>
@@ -480,6 +498,69 @@ export default function ClientsPage() {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="appointmentDateTime"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Appointment Time (Optional)</FormLabel>
+                     <div className="flex gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "flex-1 pl-10 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={(date) => {
+                                const currentValue = field.value || new Date();
+                                const newDate = date || currentValue;
+                                newDate.setHours(currentValue.getHours());
+                                newDate.setMinutes(currentValue.getMinutes());
+                                field.onChange(newDate);
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                         <div className="relative flex-none">
+                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              type="time"
+                              className="pl-10 w-36"
+                              value={field.value ? format(field.value, 'HH:mm') : ''}
+                              onChange={(e) => {
+                                const currentValue = field.value || new Date();
+                                const [hours, minutes] = e.target.value.split(':');
+                                currentValue.setHours(parseInt(hours, 10));
+                                currentValue.setMinutes(parseInt(minutes, 10));
+                                field.onChange(new Date(currentValue));
+                              }}
+                            />
+                        </div>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
 
               <DialogFooter className="pt-4">
                 <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>

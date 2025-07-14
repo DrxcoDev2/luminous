@@ -10,4 +10,5 @@ export interface Client {
   postalCode?: string;
   nationality?: string;
   dateOfBirth?: string; // Storing as ISO string e.g., "YYYY-MM-DD"
+  appointmentDateTime?: string; // Storing as ISO string
 }
