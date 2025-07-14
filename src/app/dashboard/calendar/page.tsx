@@ -48,7 +48,11 @@ export default function CalendarPage() {
     const grouped: { [key: string]: Client[] } = {};
     clients.forEach(client => {
       if (client.appointmentDateTime) {
-        const date = format(parseISO(client.appointmentDateTime), 'yyyy-MM-dd');
+        // By using `addDays` with 0, we ensure the date is interpreted in the local timezone,
+        // preventing timezone bugs where an appointment at midnight might shift to the previous day.
+        const appointmentDate = addDays(new Date(client.appointmentDateTime), 0);
+        const date = format(appointmentDate, 'yyyy-MM-dd');
+
         if (!grouped[date]) {
           grouped[date] = [];
         }
@@ -60,7 +64,7 @@ export default function CalendarPage() {
   }, [clients]);
 
   const appointmentDates = useMemo(() => {
-    return Object.keys(appointmentsByDate).map(dateStr => addDays(new Date(dateStr),0));
+    return Object.keys(appointmentsByDate).map(dateStr => addDays(new Date(dateStr), 0));
   }, [appointmentsByDate]);
 
   const selectedDayAppointments = useMemo(() => {
