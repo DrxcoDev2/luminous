@@ -8,7 +8,8 @@ export interface Client {
   email: string;
   phone?: string;
   status: 'Active' | 'Inactive';
-  userId: string;
+  userId: string; // The user who created the client
+  teamId?: string | null; // The team this client belongs to
   address?: string;
   postalCode?: string;
   nationality?: string;

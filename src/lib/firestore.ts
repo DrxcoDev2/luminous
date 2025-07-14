@@ -5,16 +5,20 @@ import type { Client } from '@/types/client';
 import type { ClientNote } from '@/types/client-note';
 import type { Feedback } from '@/types/feedback';
 import type { Team, TeamMember } from '@/types/team';
+import { getUserSettings } from './user-settings';
 
 // Define the type for the data being added to Firestore, excluding the id
-type AddClientData = Omit<Client, 'id' | 'status' | 'userId' | 'createdAt' | 'notes'>;
+type AddClientData = Omit<Client, 'id' | 'status' | 'userId' | 'createdAt' | 'notes' | 'teamId'>;
 
 // Function to add a new client to the 'clients' collection
 export const addClient = async (clientData: AddClientData, userId: string) => {
   try {
+    const userSettings = await getUserSettings(userId);
+
     const dataWithUserAndTimestamp = {
         ...clientData,
         userId,
+        teamId: userSettings?.teamId || null, // Associate client with team
         status: 'Active',
         createdAt: serverTimestamp(),
     };
@@ -27,14 +31,27 @@ export const addClient = async (clientData: AddClientData, userId: string) => {
   }
 };
 
-// Function to get all clients for a specific user from the 'clients' collection
+// Function to get all clients for a specific user or team from the 'clients' collection
 export const getClients = async (userId: string): Promise<Client[]> => {
     try {
-        const q = query(
-          collection(db, "clients"), 
-          where("userId", "==", userId),
-          orderBy("createdAt", "desc")
-        );
+        const settings = await getUserSettings(userId);
+        let q;
+        if (settings?.teamId) {
+            // If user is in a team, fetch all clients for that team
+            q = query(
+                collection(db, "clients"), 
+                where("teamId", "==", settings.teamId),
+                orderBy("createdAt", "desc")
+            );
+        } else {
+            // Otherwise, fetch only the user's own clients
+            q = query(
+                collection(db, "clients"), 
+                where("userId", "==", userId),
+                orderBy("createdAt", "desc")
+            );
+        }
+
         const querySnapshot = await getDocs(q);
         const clients: Client[] = [];
         querySnapshot.forEach((doc) => {
