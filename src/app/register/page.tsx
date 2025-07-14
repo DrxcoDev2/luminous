@@ -26,9 +26,10 @@ import * as z from 'zod';
 import { signUp, signInWithGoogle, signInWithGitHub } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Github, Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
+import { useAuth } from '@/contexts/auth-context';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -37,6 +38,7 @@ const formSchema = z.object({
 });
 
 export default function RegisterPage() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +52,12 @@ export default function RegisterPage() {
       password: '',
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -116,6 +124,10 @@ export default function RegisterPage() {
     } finally {
       setIsSocialLoading(null);
     }
+  }
+
+  if (user) {
+    return null; // Don't render the page if user is logged in
   }
 
   return (
