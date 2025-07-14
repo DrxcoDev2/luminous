@@ -58,13 +58,13 @@ export default function DashboardPage() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton href="/dashboard" isActive>
-                <LayoutDashboard />
+                <LayoutDashboard className="transition-transform duration-300 group-hover/menu-item:rotate-12" />
                 Dashboard
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton href="#">
-                <Settings />
+                <Settings className="transition-transform duration-300 group-hover/menu-item:rotate-12" />
                 Settings
               </SidebarMenuButton>
             </SidebarMenuItem>
