@@ -278,10 +278,10 @@ export default function ClientsPage() {
   };
 
   async function onNoteSubmit(values: z.infer<typeof noteSchema>) {
-    if (!selectedClient) return;
+    if (!selectedClient || !user) return;
     setIsAddingNote(true);
     try {
-      const newNoteId = await addNote(selectedClient.id, values.note);
+      const newNoteId = await addNote(selectedClient.id, values.note, user.uid);
       const newNote = await getNotes(selectedClient.id).then(notes => notes.find(n => n.id === newNoteId)!);
       setNotes(prev => [newNote, ...prev]);
       noteForm.reset();

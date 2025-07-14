@@ -75,11 +75,12 @@ export const deleteClient = async (clientId: string) => {
 // --- Client Notes Functions ---
 
 // Function to add a new note to a client's 'notes' subcollection
-export const addNote = async (clientId: string, text: string): Promise<string> => {
+export const addNote = async (clientId: string, text: string, userId: string): Promise<string> => {
     try {
         const notesCollectionRef = collection(db, 'clients', clientId, 'notes');
         const docRef = await addDoc(notesCollectionRef, {
             text,
+            userId,
             createdAt: serverTimestamp(),
         });
         return docRef.id;
@@ -100,7 +101,7 @@ export const getNotes = async (clientId: string): Promise<ClientNote[]> => {
         querySnapshot.forEach((doc) => {
             const data = doc.data();
             const createdAt = data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now();
-            notes.push({ id: doc.id, text: data.text, createdAt } as ClientNote);
+            notes.push({ id: doc.id, ...data } as ClientNote);
         });
         return notes;
     } catch (e) {
@@ -136,5 +137,3 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
         throw new Error('Could not send email');
     }
 };
-
-    

@@ -4,6 +4,5 @@ export interface ClientNote {
   id: string;
   text: string;
   createdAt: Timestamp;
+  userId: string;
 }
-
-    
