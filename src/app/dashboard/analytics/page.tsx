@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Calendar, DollarSign, CalendarCheck, CalendarX } from 'lucide-react';
+import { Users, Calendar, CalendarCheck, CalendarX } from 'lucide-react';
 import type { Client } from '@/types/client';
 import { useAuth } from '@/contexts/auth-context';
 import { getClients } from '@/lib/firestore';
@@ -57,7 +57,6 @@ export default function AnalyticsPage() {
       totalClients: clients.length,
       upcomingAppointments,
       completedAppointments,
-      totalRevenue: '0.00' // Placeholder
     };
   }, [clients]);
 
@@ -113,11 +112,10 @@ export default function AnalyticsPage() {
 
   return (
     <div className="p-4 md:p-8 space-y-8">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatCard title="Total Clients" value={stats.totalClients} icon={<Users className="h-4 w-4 text-muted-foreground" />} isLoading={isLoading} />
         <StatCard title="Completed Appointments" value={stats.completedAppointments} icon={<CalendarCheck className="h-4 w-4 text-muted-foreground" />} isLoading={isLoading} />
         <StatCard title="Upcoming Appointments" value={stats.upcomingAppointments} icon={<Calendar className="h-4 w-4 text-muted-foreground" />} isLoading={isLoading} />
-        <StatCard title="Total Revenue" value={`$${stats.totalRevenue}`} icon={<DollarSign className="h-4 w-4 text-muted-foreground" />} isLoading={isLoading} />
       </div>
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
