@@ -341,7 +341,10 @@ export default function ClientsPage() {
                           <TableCell className="font-medium">{client.name}</TableCell>
                           <TableCell>{client.email}</TableCell>
                            <TableCell className="hidden md:table-cell">
-                            {client.appointmentDateTime ? format(new Date(client.appointmentDateTime), 'PPp') : 'N/A'}
+                            {client.appointmentDateTime ? 
+                                `${format(new Date(client.appointmentDateTime), 'PP')} @ ${format(new Date(client.appointmentDateTime), 'HH:mm')}` 
+                                : 'N/A'
+                            }
                           </TableCell>
                           <TableCell className="hidden md:table-cell">{client.address || 'N/A'}</TableCell>
                           <TableCell className="hidden md:table-cell">{client.phone || 'N/A'}</TableCell>
