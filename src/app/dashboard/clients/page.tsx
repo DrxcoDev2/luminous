@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit, Home, Milestone, CalendarIcon, Globe } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -30,7 +30,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -41,7 +40,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
   DropdownMenu,
@@ -66,11 +64,20 @@ import { addClient, getClients, updateClient, deleteClient } from '@/lib/firesto
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+
 
 const clientSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Invalid email address.' }),
   phone: z.string().optional(),
+  address: z.string().optional(),
+  postalCode: z.string().optional(),
+  nationality: z.string().optional(),
+  dateOfBirth: z.date().optional(),
 });
 
 export default function ClientsPage() {
@@ -113,6 +120,10 @@ export default function ClientsPage() {
       name: '',
       email: '',
       phone: '',
+      address: '',
+      postalCode: '',
+      nationality: '',
+      dateOfBirth: undefined,
     },
   });
 
@@ -122,12 +133,20 @@ export default function ClientsPage() {
         name: editingClient.name,
         email: editingClient.email,
         phone: editingClient.phone || '',
+        address: editingClient.address || '',
+        postalCode: editingClient.postalCode || '',
+        nationality: editingClient.nationality || '',
+        dateOfBirth: editingClient.dateOfBirth ? new Date(editingClient.dateOfBirth) : undefined,
       });
     } else {
       form.reset({
         name: '',
         email: '',
         phone: '',
+        address: '',
+        postalCode: '',
+        nationality: '',
+        dateOfBirth: undefined,
       });
     }
   }, [editingClient, form]);
@@ -157,17 +176,23 @@ export default function ClientsPage() {
       return;
     }
     setIsLoading(true);
+
+    const clientData = {
+      ...values,
+      dateOfBirth: values.dateOfBirth ? values.dateOfBirth.toISOString().split('T')[0] : undefined,
+    };
+
     try {
       if (editingClient) {
-        const updatedClient = { ...editingClient, ...values };
+        const updatedClient = { ...editingClient, ...clientData };
         await updateClient(updatedClient);
         setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c));
         toast({ title: 'Success!', description: 'Client has been updated.' });
       } else {
-        const newClientId = await addClient(values, user.uid);
+        const newClientId = await addClient(clientData, user.uid);
         const newClient: Client = { 
           id: newClientId, 
-          ...values, 
+          ...clientData,
           status: 'Active', 
           userId: user.uid 
         };
@@ -208,13 +233,13 @@ export default function ClientsPage() {
     }
   }
 
-
   const TableSkeleton = () => (
     <TableBody>
       {[...Array(3)].map((_, i) => (
         <TableRow key={i}>
           <TableCell><Skeleton className="h-4 w-32" /></TableCell>
           <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+          <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
           <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
           <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
           <TableCell><Skeleton className="h-8 w-8" /></TableCell>
@@ -245,6 +270,7 @@ export default function ClientsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead className="hidden md:table-cell">Phone</TableHead>
+                <TableHead className="hidden md:table-cell">Nationality</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
@@ -258,6 +284,7 @@ export default function ClientsPage() {
                           <TableCell className="font-medium">{client.name}</TableCell>
                           <TableCell>{client.email}</TableCell>
                           <TableCell className="hidden md:table-cell">{client.phone || 'N/A'}</TableCell>
+                          <TableCell className="hidden md:table-cell">{client.nationality || 'N/A'}</TableCell>
                           <TableCell>
                             <Badge variant={client.status === 'Active' ? 'default' : 'secondary'}>
                               {client.status}
@@ -288,7 +315,7 @@ export default function ClientsPage() {
                       </TableRow>
                   )) : (
                       <TableRow>
-                          <TableCell colSpan={5} className="text-center h-24">
+                          <TableCell colSpan={6} className="text-center h-24">
                               No clients yet. Add one to get started!
                           </TableCell>
                       </TableRow>
@@ -312,7 +339,7 @@ export default function ClientsPage() {
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -345,7 +372,7 @@ export default function ClientsPage() {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="phone"
                 render={({ field }) => (
@@ -361,7 +388,97 @@ export default function ClientsPage() {
                   </FormItem>
                 )}
               />
-              <DialogFooter>
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Home Address (Optional)</FormLabel>
+                     <FormControl>
+                       <div className="relative">
+                         <Home className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                         <Input placeholder="123 Main St, Anytown" {...field} className="pl-10" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="postalCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Postal Code (Optional)</FormLabel>
+                     <FormControl>
+                       <div className="relative">
+                         <Milestone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                         <Input placeholder="12345" {...field} className="pl-10" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="nationality"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nationality (Optional)</FormLabel>
+                     <FormControl>
+                       <div className="relative">
+                         <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                         <Input placeholder="American" {...field} className="pl-10" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="dateOfBirth"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Date of birth (Optional)</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "pl-10 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter className="pt-4">
                 <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
                 <Button type="submit" disabled={isLoading}>
                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
