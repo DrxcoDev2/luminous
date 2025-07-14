@@ -8,10 +8,11 @@ import type { Client } from '@/types/client';
 import { useAuth } from '@/contexts/auth-context';
 import { getClients } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { addDays, format, isSameDay, parseISO } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserCircle, Clock } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 export default function CalendarPage() {
   const { user } = useAuth();
@@ -74,32 +75,33 @@ export default function CalendarPage() {
         <CardHeader>
           <CardTitle className="text-2xl">Calendar</CardTitle>
           <CardDescription>
-            Here are your upcoming client appointments.
+            Here are your upcoming client appointments. Click on a day to see details.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-8 md:grid-cols-2">
-          <div>
-            {isLoading ? (
-              <Skeleton className="w-full h-[350px] rounded-lg" />
-            ) : (
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                modifiers={{ scheduled: appointmentDates }}
-                modifiersStyles={{
-                  scheduled: {
-                    fontWeight: 'bold',
-                    backgroundColor: 'hsl(var(--primary) / 0.1)',
-                    color: 'hsl(var(--primary))',
-                  },
-                }}
-                className="rounded-md border"
-              />
-            )}
-          </div>
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">
+        <CardContent className="flex flex-col items-center">
+          {isLoading ? (
+            <Skeleton className="w-full max-w-md h-[350px] rounded-lg" />
+          ) : (
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              modifiers={{ scheduled: appointmentDates }}
+              modifiersStyles={{
+                scheduled: {
+                  fontWeight: 'bold',
+                  backgroundColor: 'hsl(var(--primary) / 0.1)',
+                  color: 'hsl(var(--primary))',
+                },
+              }}
+              className="rounded-md border self-center"
+            />
+          )}
+          
+          <Separator className="my-8" />
+          
+          <div className="w-full max-w-md">
+            <h3 className="text-lg font-semibold text-center mb-4">
               Appointments for {selectedDate ? format(selectedDate, 'PPP') : '...'}
             </h3>
             {isLoading ? (
