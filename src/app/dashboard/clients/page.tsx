@@ -65,6 +65,7 @@ import type { Client } from '@/types/client';
 import { addClient, getClients, updateClient, deleteClient } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/auth-context';
 
 const clientSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -73,6 +74,7 @@ const clientSchema = z.object({
 });
 
 export default function ClientsPage() {
+  const { user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isDeletingDialogOpen, setIsDeletingDialogOpen] = useState(false);
@@ -85,8 +87,12 @@ export default function ClientsPage() {
 
   useEffect(() => {
     async function fetchClients() {
+      if (!user) {
+        setIsFetching(false);
+        return;
+      };
       try {
-        const fetchedClients = await getClients();
+        const fetchedClients = await getClients(user.uid);
         setClients(fetchedClients);
       } catch (error) {
          toast({
@@ -99,7 +105,7 @@ export default function ClientsPage() {
       }
     }
     fetchClients();
-  }, [toast]);
+  }, [user, toast]);
 
   const form = useForm<z.infer<typeof clientSchema>>({
     resolver: zodResolver(clientSchema),
@@ -142,6 +148,14 @@ export default function ClientsPage() {
   };
 
   async function onSubmit(values: z.infer<typeof clientSchema>) {
+    if (!user) {
+       toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'You must be logged in to manage clients.',
+      });
+      return;
+    }
     setIsLoading(true);
     try {
       if (editingClient) {
@@ -150,9 +164,14 @@ export default function ClientsPage() {
         setClients(clients.map(c => c.id === updatedClient.id ? updatedClient : c));
         toast({ title: 'Success!', description: 'Client has been updated.' });
       } else {
-        const newClientId = await addClient(values);
-        const newClient: Client = { id: newClientId, ...values, status: 'Active' };
-        setClients(prev => [...prev, newClient]);
+        const newClientId = await addClient(values, user.uid);
+        const newClient: Client = { 
+          id: newClientId, 
+          ...values, 
+          status: 'Active', 
+          userId: user.uid 
+        };
+        setClients(prev => [newClient, ...prev]);
         toast({ title: 'Success!', description: 'New client has been added.' });
       }
       setIsFormDialogOpen(false);

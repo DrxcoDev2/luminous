@@ -1,19 +1,20 @@
 import { db } from './firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, where, orderBy } from 'firebase/firestore';
 import type { Client } from '@/types/client';
 
 // Define the type for the data being added to Firestore, excluding the id
-type AddClientData = Omit<Client, 'id' | 'status'>;
+type AddClientData = Omit<Client, 'id' | 'status' | 'userId'>;
 
 // Function to add a new client to the 'clients' collection
-export const addClient = async (clientData: AddClientData) => {
+export const addClient = async (clientData: AddClientData, userId: string) => {
   try {
-    const dataWithTimestamp = {
+    const dataWithUserAndTimestamp = {
         ...clientData,
+        userId,
         status: 'Active',
         createdAt: serverTimestamp(),
     };
-    const docRef = await addDoc(collection(db, 'clients'), dataWithTimestamp);
+    const docRef = await addDoc(collection(db, 'clients'), dataWithUserAndTimestamp);
     return docRef.id;
   } catch (e) {
     console.error('Error adding document: ', e);
@@ -21,10 +22,14 @@ export const addClient = async (clientData: AddClientData) => {
   }
 };
 
-// Function to get all clients from the 'clients' collection
-export const getClients = async (): Promise<Client[]> => {
+// Function to get all clients for a specific user from the 'clients' collection
+export const getClients = async (userId: string): Promise<Client[]> => {
     try {
-        const q = query(collection(db, "clients"), orderBy("createdAt", "desc"));
+        const q = query(
+          collection(db, "clients"), 
+          where("userId", "==", userId),
+          orderBy("createdAt", "desc")
+        );
         const querySnapshot = await getDocs(q);
         const clients: Client[] = [];
         querySnapshot.forEach((doc) => {

@@ -5,4 +5,5 @@ export interface Client {
   email: string;
   phone?: string;
   status: 'Active' | 'Inactive';
+  userId: string;
 }
