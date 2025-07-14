@@ -3,19 +3,19 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function DashboardPage() {
+export default function SettingsPage() {
   return (
     <div className="p-8">
       <Card className="w-full max-w-4xl">
         <CardHeader>
-          <CardTitle className="text-2xl">Welcome Back!</CardTitle>
+          <CardTitle className="text-2xl">Settings</CardTitle>
           <CardDescription>
-            This is your dashboard. You can add your main content here.
+            Manage your account settings.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p>
-            The sidebar is collapsible and responsive. Try resizing your browser window to see it in action.
+            This is where you can update your profile and preferences.
           </p>
         </CardContent>
       </Card>
