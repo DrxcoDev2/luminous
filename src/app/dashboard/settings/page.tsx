@@ -108,7 +108,7 @@ export default function SettingsPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <Card className="w-full max-w-4xl mx-auto">
+      <Card className="w-full max-w-2xl mx-auto">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardHeader>

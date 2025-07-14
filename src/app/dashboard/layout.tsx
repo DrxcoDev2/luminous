@@ -95,8 +95,8 @@ export default function DashboardLayout({
       <SidebarInset>
         <header className="flex items-center justify-between p-4 border-b">
           <SidebarTrigger />
-          <h1 className="text-2xl font-semibold capitalize">{pathname.split('/').pop()?.replace('-', ' ') || 'Dashboard'}</h1>
-          <div></div>
+          <h1 className="text-xl md:text-2xl font-semibold capitalize flex-1 text-center md:text-left">{pathname.split('/').pop()?.replace('-', ' ') || 'Dashboard'}</h1>
+          <div className="w-8"></div>
         </header>
         {children}
       </SidebarInset>

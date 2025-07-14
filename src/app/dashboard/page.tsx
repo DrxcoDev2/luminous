@@ -215,7 +215,7 @@ export default function DashboardPage() {
 };
 
   const WeeklyClientsChart = () => (
-    <Card className="lg:col-span-2">
+    <Card className="col-span-1 lg:col-span-2">
        <CardHeader>
          <CardTitle className="text-xl">Weekly Client Signups</CardTitle>
          <CardDescription>New clients added in the last 6 weeks.</CardDescription>
@@ -242,7 +242,7 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 auto-rows-[minmax(200px,auto)]">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 auto-rows-auto md:auto-rows-[minmax(200px,auto)]">
         <WeeklyClientsChart />
         <TotalClientsCard />
         <CalendarCard />
@@ -251,4 +251,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

@@ -93,36 +93,41 @@ export default function CalendarPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <Card className="w-full max-w-4xl mx-auto">
+      <Card className="w-full max-w-5xl mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl">Calendar</CardTitle>
           <CardDescription>
             Here are your upcoming client appointments. Click on a day to see details.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col items-center">
-          {isLoading ? (
-            <Skeleton className="w-full max-w-md h-[350px] rounded-lg" />
-          ) : (
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              modifiers={{ scheduled: appointmentDates }}
-              modifiersStyles={{
-                scheduled: {
-                  fontWeight: 'bold',
-                  backgroundColor: 'hsl(var(--primary) / 0.1)',
-                  color: 'hsl(var(--primary))',
-                },
-              }}
-              className="rounded-md border self-center"
-            />
-          )}
+        <CardContent className="flex flex-col lg:flex-row items-start lg:gap-8">
+          <div className="w-full lg:w-auto flex justify-center">
+            {isLoading ? (
+              <Skeleton className="w-[350px] h-[350px] rounded-lg" />
+            ) : (
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                modifiers={{ scheduled: appointmentDates }}
+                modifiersStyles={{
+                  scheduled: {
+                    fontWeight: 'bold',
+                    backgroundColor: 'hsl(var(--primary) / 0.1)',
+                    color: 'hsl(var(--primary))',
+                  },
+                }}
+                className="rounded-md border self-center"
+              />
+            )}
+          </div>
           
-          <Separator className="my-8" />
+          <Separator className="my-8 lg:hidden" />
+          <div className="hidden lg:block">
+            <Separator orientation="vertical" className="h-full" />
+          </div>
           
-          <div className="w-full max-w-md">
+          <div className="w-full flex-1">
             <h3 className="text-lg font-semibold text-center mb-4">
               Appointments for {selectedDate ? formatInTimezone(selectedDate, 'PPP') : '...'}
             </h3>

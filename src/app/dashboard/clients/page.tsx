@@ -325,88 +325,90 @@ export default function ClientsPage() {
     <div className="p-4 md:p-8">
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <CardTitle className="text-2xl">Clients</CardTitle>
               <CardDescription>Manage your clients here.</CardDescription>
             </div>
-            <Button onClick={handleAddNewClientClick}>
+            <Button onClick={handleAddNewClientClick} className="w-full sm:w-auto">
               <PlusCircle className="mr-2" />
               Add New Client
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead className="hidden md:table-cell">Appointment</TableHead>
-                <TableHead className="hidden md:table-cell">Address</TableHead>
-                <TableHead className="hidden md:table-cell">Phone</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            {isFetching ? <TableSkeleton /> : (
-              <TableBody>
-                  {clients.length > 0 ? clients.map((client) => (
-                      <TableRow key={client.id}>
-                          <TableCell className="font-medium">{client.name}</TableCell>
-                          <TableCell>{client.email}</TableCell>
-                           <TableCell className="hidden md:table-cell">
-                            {client.appointmentDateTime ? 
-                                `${formatInTimezone(client.appointmentDateTime, 'PP')} @ ${formatInTimezone(client.appointmentDateTime, 'HH:mm')}` 
-                                : 'N/A'
-                            }
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">{client.address || 'N/A'}</TableCell>
-                          <TableCell className="hidden md:table-cell">{client.phone || 'N/A'}</TableCell>
-                          <TableCell>
-                            <Badge variant={client.status === 'Active' ? 'default' : 'secondary'}>
-                              {client.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                              <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                      <span className="sr-only">Toggle menu</span>
-                                      </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                       <DropdownMenuItem onSelect={() => handleContactClientClick(client)}>
-                                        <Mail className="mr-2 h-4 w-4" />
-                                        Contact
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onSelect={() => handleEditClientClick(client)}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Edit
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onSelect={() => handleDeleteClientClick(client)} className="text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete
-                                      </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                              </DropdownMenu>
-                          </TableCell>
-                      </TableRow>
-                  )) : (
-                      <TableRow>
-                          <TableCell colSpan={7} className="text-center h-24">
-                              No clients yet. Add one to get started!
-                          </TableCell>
-                      </TableRow>
-                  )}
-              </TableBody>
-            )}
-          </Table>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead className="hidden md:table-cell">Appointment</TableHead>
+                  <TableHead className="hidden lg:table-cell">Address</TableHead>
+                  <TableHead className="hidden xl:table-cell">Phone</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              {isFetching ? <TableSkeleton /> : (
+                <TableBody>
+                    {clients.length > 0 ? clients.map((client) => (
+                        <TableRow key={client.id}>
+                            <TableCell className="font-medium">{client.name}</TableCell>
+                            <TableCell>{client.email}</TableCell>
+                             <TableCell className="hidden md:table-cell">
+                              {client.appointmentDateTime ? 
+                                  `${formatInTimezone(client.appointmentDateTime, 'PP')} @ ${formatInTimezone(client.appointmentDateTime, 'HH:mm')}` 
+                                  : 'N/A'
+                              }
+                            </TableCell>
+                            <TableCell className="hidden lg:table-cell">{client.address || 'N/A'}</TableCell>
+                            <TableCell className="hidden xl:table-cell">{client.phone || 'N/A'}</TableCell>
+                            <TableCell>
+                              <Badge variant={client.status === 'Active' ? 'default' : 'secondary'}>
+                                {client.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                        <span className="sr-only">Toggle menu</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                         <DropdownMenuItem onSelect={() => handleContactClientClick(client)}>
+                                          <Mail className="mr-2 h-4 w-4" />
+                                          Contact
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={() => handleEditClientClick(client)}>
+                                          <Edit className="mr-2 h-4 w-4" />
+                                          Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onSelect={() => handleDeleteClientClick(client)} className="text-destructive">
+                                          <Trash2 className="mr-2 h-4 w-4" />
+                                          Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </TableCell>
+                        </TableRow>
+                    )) : (
+                        <TableRow>
+                            <TableCell colSpan={7} className="text-center h-24">
+                                No clients yet. Add one to get started!
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+              )}
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
