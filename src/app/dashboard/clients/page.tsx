@@ -179,7 +179,7 @@ export default function ClientsPage() {
       form.reset({ name: '', email: '', phone: '', address: '', postalCode: '', nationality: '', dateOfBirth: '', appointmentDateTime: '' });
       setNotes([]);
     }
-  }, [selectedClient, form, timezone, formatInTimezone]);
+  }, [selectedClient, form, formatInTimezone]);
 
   const handleAddNewClientClick = () => {
     setSelectedClient(null);
@@ -433,10 +433,10 @@ export default function ClientsPage() {
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="notes" disabled={!selectedClient}>Notes</TabsTrigger>
             </TabsList>
-            <TabsContent value="details" className="h-full">
+            <TabsContent value="details" className="h-full flex flex-col min-h-0">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 pr-4 h-full flex flex-col">
-                  <ScrollArea className="flex-1 pr-2">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 h-full flex flex-col">
+                  <ScrollArea className="flex-1 pr-4">
                     <div className="space-y-4">
                       <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><div className="relative"><User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="John Doe" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
                       <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="name@example.com" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
@@ -448,7 +448,7 @@ export default function ClientsPage() {
                       <FormField control={form.control} name="appointmentDateTime" render={({ field }) => (<FormItem><FormLabel>Appointment Time (Optional)</FormLabel><FormControl><div className="relative"><Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="datetime-local" placeholder="YYYY-MM-DDTHH:mm" {...field} className="pl-10" /></div></FormControl><FormMessage /></FormItem>)} />
                     </div>
                   </ScrollArea>
-                  <DialogFooter className="pt-4 border-t">
+                  <DialogFooter className="pt-4 border-t mt-auto">
                     <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
                     <Button type="submit" disabled={isLoading}>{isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{selectedClient ? 'Update Client' : 'Add Client'}</Button>
                   </DialogFooter>
