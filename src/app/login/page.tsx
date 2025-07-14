@@ -1,3 +1,4 @@
+
 'use client';
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,7 @@ import { useState } from 'react';
 import { Github, Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
 import { useAuth } from '@/contexts/auth-context';
+import { ensureUserSettings } from '@/lib/user-settings';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
@@ -73,10 +75,15 @@ export default function LoginPage() {
   async function handleSocialLogin(provider: 'google' | 'github') {
     setIsSocialLoading(provider);
     try {
+      let userCredential;
       if (provider === 'google') {
-        await signInWithGoogle();
+        userCredential = await signInWithGoogle();
       } else {
-        await signInWithGitHub();
+        userCredential = await signInWithGitHub();
+      }
+
+      if(userCredential.user) {
+        await ensureUserSettings(userCredential.user);
       }
       // The redirection is now handled by the AuthProvider
     } catch (error: unknown) {

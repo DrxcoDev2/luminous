@@ -32,7 +32,7 @@ import { Github, Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
 import { useAuth } from '@/contexts/auth-context';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { saveUserSettings } from '@/lib/user-settings';
+import { saveUserSettings, ensureUserSettings } from '@/lib/user-settings';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -114,11 +114,7 @@ export default function RegisterPage() {
 
       const newUser = userCredential.user;
       if (newUser) {
-          await saveUserSettings(newUser.uid, {
-              userId: newUser.uid,
-              name: newUser.displayName,
-              email: newUser.email,
-          });
+         await ensureUserSettings(newUser);
       }
       // The redirection is now handled by the AuthProvider
     } catch (error: unknown) {
