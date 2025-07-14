@@ -34,15 +34,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (loading) return;
 
     const isAuthPage = pathname === '/login' || pathname === '/register';
-    const isProtectedPage = pathname === '/dashboard';
+    const isDashboardPage = pathname.startsWith('/dashboard');
 
-    if (!user && isProtectedPage) {
+    // If the user is not logged in and tries to access a protected dashboard page,
+    // redirect them to the login page.
+    if (!user && isDashboardPage) {
       router.push('/login');
     }
 
+    // If the user is logged in and tries to access the login or register page,
+    // redirect them to their dashboard.
     if (user && isAuthPage) {
       router.push('/dashboard');
     }
+    // No action is needed for public pages like the homepage, so we don't add an else block.
+    // This allows unauthenticated users to browse public content without waiting for auth checks.
+
   }, [user, loading, pathname, router]);
 
 
