@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useForm as useContactForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit, Home, Milestone, CalendarIcon, Globe, Clock } from 'lucide-react';
@@ -65,6 +65,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
 import { format } from 'date-fns';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const clientSchema = z.object({
@@ -78,15 +79,22 @@ const clientSchema = z.object({
   appointmentDateTime: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, { message: "Datetime must be in YYYY-MM-DDTHH:mm format."}).optional().or(z.literal('')),
 });
 
+const contactSchema = z.object({
+  subject: z.string().min(1, { message: 'Subject is required.' }),
+  message: z.string().min(1, { message: 'Message is required.' }),
+});
+
 export default function ClientsPage() {
   const { user } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isDeletingDialogOpen, setIsDeletingDialogOpen] = useState(false);
+  const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
+  const [contactingClient, setContactingClient] = useState<Client | null>(null);
 
   const { toast } = useToast();
 
@@ -123,6 +131,14 @@ export default function ClientsPage() {
       nationality: '',
       dateOfBirth: '',
       appointmentDateTime: '',
+    },
+  });
+  
+  const contactForm = useContactForm<z.infer<typeof contactSchema>>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      subject: '',
+      message: '',
     },
   });
 
@@ -166,6 +182,13 @@ export default function ClientsPage() {
     setDeletingClient(client);
     setIsDeletingDialogOpen(true);
   };
+  
+  const handleContactClientClick = (client: Client) => {
+    setContactingClient(client);
+    contactForm.reset();
+    setIsContactDialogOpen(true);
+  };
+
 
   async function onSubmit(values: z.infer<typeof clientSchema>) {
     if (!user) {
@@ -240,6 +263,18 @@ export default function ClientsPage() {
       setIsLoading(false);
     }
   }
+  
+  function onContactSubmit(values: z.infer<typeof contactSchema>) {
+    if (!contactingClient) return;
+
+    const mailtoLink = `mailto:${contactingClient.email}?subject=${encodeURIComponent(
+      values.subject
+    )}&body=${encodeURIComponent(values.message)}`;
+    
+    window.location.href = mailtoLink;
+    setIsContactDialogOpen(false);
+  }
+
 
   const TableSkeleton = () => (
     <TableBody>
@@ -313,11 +348,15 @@ export default function ClientsPage() {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                      <DropdownMenuSeparator />
+                                       <DropdownMenuItem onSelect={() => handleContactClientClick(client)}>
+                                        <Mail className="mr-2 h-4 w-4" />
+                                        Contact
+                                      </DropdownMenuItem>
                                       <DropdownMenuItem onSelect={() => handleEditClientClick(client)}>
                                         <Edit className="mr-2 h-4 w-4" />
                                         Edit
                                       </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
                                       <DropdownMenuItem onSelect={() => handleDeleteClientClick(client)} className="text-destructive">
                                         <Trash2 className="mr-2 h-4 w-4" />
                                         Delete
@@ -515,6 +554,65 @@ export default function ClientsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Contact Client Dialog */}
+      <Dialog open={isContactDialogOpen} onOpenChange={setIsContactDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Contact {contactingClient?.name}</DialogTitle>
+            <DialogDescription>
+              Compose your email below. Clicking 'Send Email' will open your default mail client.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...contactForm}>
+            <form onSubmit={contactForm.handleSubmit(onContactSubmit)} className="space-y-4">
+              <div className="flex items-baseline gap-2">
+                <p className="text-sm font-medium">To:</p>
+                <p className="text-sm text-muted-foreground">{contactingClient?.email}</p>
+              </div>
+              <FormField
+                control={contactForm.control}
+                name="subject"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subject</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Regarding your appointment" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={contactForm.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Message</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Type your message here..."
+                        className="min-h-[150px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter className="pt-4">
+                <Button variant="outline" onClick={() => setIsContactDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  <Mail className="mr-2 h-4 w-4" />
+                  Send Email
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
