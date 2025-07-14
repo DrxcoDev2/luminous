@@ -306,19 +306,64 @@ export default function ClientsPage() {
 
 
   const TableSkeleton = () => (
-    <TableBody>
+    <div className="space-y-4 md:hidden">
+      {[...Array(3)].map((_, i) => (
+        <Card key={i} className="p-4 space-y-3">
+          <div className="flex justify-between items-center">
+             <Skeleton className="h-5 w-32" />
+             <Skeleton className="h-6 w-16 rounded-full" />
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2"> <Skeleton className="h-4 w-4" /> <Skeleton className="h-4 w-48" /></div>
+            <div className="flex items-center gap-2"> <Skeleton className="h-4 w-4" /> <Skeleton className="h-4 w-24" /></div>
+            <div className="flex items-center gap-2"> <Skeleton className="h-4 w-4" /> <Skeleton className="h-4 w-36" /></div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+  
+  const TableSkeletonDesktop = () => (
+     <TableBody>
       {[...Array(3)].map((_, i) => (
         <TableRow key={i}>
           <TableCell><Skeleton className="h-4 w-32" /></TableCell>
           <TableCell><Skeleton className="h-4 w-48" /></TableCell>
           <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-36" /></TableCell>
-          <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-36" /></TableCell>
-          <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
+          <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-36" /></TableCell>
+          <TableCell className="hidden xl:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
           <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
           <TableCell><Skeleton className="h-8 w-8" /></TableCell>
         </TableRow>
       ))}
     </TableBody>
+  )
+
+  const ClientActions = ({ client }: { client: Client}) => (
+     <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <Button aria-haspopup="true" size="icon" variant="ghost">
+            <MoreHorizontal className="h-4 w-4" />
+            <span className="sr-only">Toggle menu</span>
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={() => handleContactClientClick(client)}>
+              <Mail className="mr-2 h-4 w-4" />
+              Contact
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => handleEditClientClick(client)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => handleDeleteClientClick(client)} className="text-destructive">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+        </DropdownMenuContent>
+    </DropdownMenu>
   );
 
   return (
@@ -337,7 +382,57 @@ export default function ClientsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+           {/* Mobile View */}
+           <div className="md:hidden">
+             {isFetching ? <TableSkeleton /> : (
+                <div className="space-y-4">
+                  {clients.length > 0 ? clients.map((client) => (
+                    <Card key={client.id} className="p-4">
+                       <div className="flex justify-between items-start">
+                         <div>
+                            <h3 className="font-semibold text-lg">{client.name}</h3>
+                            <Badge variant={client.status === 'Active' ? 'default' : 'secondary'} className="mt-1">
+                                {client.status}
+                            </Badge>
+                         </div>
+                         <ClientActions client={client} />
+                       </div>
+                       <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4" />
+                            <span>{client.email}</span>
+                          </div>
+                          {client.phone && 
+                            <div className="flex items-center gap-2">
+                                <Phone className="h-4 w-4" />
+                                <span>{client.phone}</span>
+                            </div>
+                          }
+                          {client.address && 
+                            <div className="flex items-center gap-2">
+                                <Home className="h-4 w-4" />
+                                <span>{client.address}</span>
+                            </div>
+                          }
+                           {client.appointmentDateTime && 
+                            <div className="flex items-center gap-2">
+                                <CalendarIcon className="h-4 w-4" />
+                                <span>{`${formatInTimezone(client.appointmentDateTime, 'PP')} @ ${formatInTimezone(client.appointmentDateTime, 'HH:mm')}`}</span>
+                            </div>
+                          }
+                       </div>
+                    </Card>
+                  )) : (
+                     <div className="text-center h-24 flex items-center justify-center">
+                        <p>No clients yet. Add one to get started!</p>
+                    </div>
+                  )}
+                </div>
+             )}
+           </div>
+
+           {/* Desktop View */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -352,7 +447,7 @@ export default function ClientsPage() {
                   </TableHead>
                 </TableRow>
               </TableHeader>
-              {isFetching ? <TableSkeleton /> : (
+              {isFetching ? <TableSkeletonDesktop /> : (
                 <TableBody>
                     {clients.length > 0 ? clients.map((client) => (
                         <TableRow key={client.id}>
@@ -372,30 +467,7 @@ export default function ClientsPage() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                        <span className="sr-only">Toggle menu</span>
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                         <DropdownMenuItem onSelect={() => handleContactClientClick(client)}>
-                                          <Mail className="mr-2 h-4 w-4" />
-                                          Contact
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onSelect={() => handleEditClientClick(client)}>
-                                          <Edit className="mr-2 h-4 w-4" />
-                                          Edit
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onSelect={() => handleDeleteClientClick(client)} className="text-destructive">
-                                          <Trash2 className="mr-2 h-4 w-4" />
-                                          Delete
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                              <ClientActions client={client} />
                             </TableCell>
                         </TableRow>
                     )) : (
