@@ -26,7 +26,7 @@ import * as z from 'zod';
 import { signIn, signInWithGoogle, signInWithGitHub } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Github, Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
 import { useAuth } from '@/contexts/auth-context';
@@ -51,21 +51,11 @@ export default function LoginPage() {
     },
   });
 
-  useEffect(() => {
-    if (!loading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, loading, router]);
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
       await signIn(values.email, values.password);
-      toast({
-        title: 'Login Successful',
-        description: "You've been successfully logged in.",
-      });
-      router.push('/dashboard');
+      // The redirection is now handled by the AuthProvider
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -85,11 +75,7 @@ export default function LoginPage() {
       } else {
         await signInWithGitHub();
       }
-      toast({
-        title: 'Login Successful',
-        description: `You've been successfully logged in with ${provider}.`,
-      });
-      router.push('/dashboard');
+      // The redirection is now handled by the AuthProvider
     } catch (error: any) {
       if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
         // User closed the popup, so we don't need to show an error.
@@ -107,7 +93,7 @@ export default function LoginPage() {
   }
 
   if (loading || user) {
-    return (
+     return (
        <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>

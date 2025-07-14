@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { usePathname, useRouter } from 'next/navigation';
 
 type AuthContextType = {
   user: User | null;
@@ -17,6 +18,8 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -26,6 +29,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const isAuthPage = pathname === '/login' || pathname === '/register';
+    const isProtectedPage = pathname === '/dashboard';
+
+    if (!user && isProtectedPage) {
+      router.push('/login');
+    }
+
+    if (user && isAuthPage) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, pathname, router]);
+
 
   return (
     <AuthContext.Provider value={{ user, loading }}>

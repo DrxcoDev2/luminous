@@ -2,7 +2,6 @@
 
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { logOut } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -14,20 +13,10 @@ export default function DashboardPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
-
   const handleLogout = async () => {
     try {
       await logOut();
-      toast({
-        title: 'Logged Out',
-        description: 'You have been successfully logged out.',
-      });
-      router.push('/login');
+      // Redirection to /login is handled by the AuthProvider
     } catch (error: any) {
       toast({
         variant: 'destructive',

@@ -26,7 +26,7 @@ import * as z from 'zod';
 import { signUp, signInWithGoogle, signInWithGitHub } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Github, Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
 import { useAuth } from '@/contexts/auth-context';
@@ -53,21 +53,11 @@ export default function RegisterPage() {
     },
   });
 
- useEffect(() => {
-    if (!loading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, loading, router]);
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
       await signUp(values.email, values.password);
-      toast({
-        title: 'Account Created',
-        description: 'Your account has been successfully created.',
-      });
-      router.push('/dashboard');
+      // The redirection is now handled by the AuthProvider
     } catch (error: any) {
       let description = 'An unexpected error occurred. Please try again.';
       if (error instanceof FirebaseError) {
@@ -106,11 +96,7 @@ export default function RegisterPage() {
       } else {
         await signInWithGitHub();
       }
-      toast({
-        title: 'Account Created',
-        description: `You've been successfully signed up with ${provider}.`,
-      });
-      router.push('/dashboard');
+      // The redirection is now handled by the AuthProvider
     } catch (error: any) {
       if (error instanceof FirebaseError && error.code === 'auth/popup-closed-by-user') {
         // User closed the popup, so we don't need to show an error.
