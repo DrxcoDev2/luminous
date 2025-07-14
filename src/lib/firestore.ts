@@ -69,3 +69,19 @@ export const deleteClient = async (clientId: string) => {
         throw new Error('Could not delete client');
     }
 };
+
+// Function to send an email by adding it to the 'mail' collection
+export const sendEmail = async (to: string, subject: string, html: string) => {
+    try {
+        await addDoc(collection(db, 'mail'), {
+            to: to,
+            message: {
+                subject: subject,
+                html: html,
+            },
+        });
+    } catch (e) {
+        console.error('Error sending email: ', e);
+        throw new Error('Could not send email');
+    }
+};

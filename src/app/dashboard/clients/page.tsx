@@ -60,7 +60,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import type { Client } from '@/types/client';
-import { addClient, getClients, updateClient, deleteClient } from '@/lib/firestore';
+import { addClient, getClients, updateClient, deleteClient, sendEmail } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
@@ -92,6 +92,7 @@ export default function ClientsPage() {
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
   const [contactingClient, setContactingClient] = useState<Client | null>(null);
@@ -264,15 +265,26 @@ export default function ClientsPage() {
     }
   }
   
-  function onContactSubmit(values: z.infer<typeof contactSchema>) {
+  async function onContactSubmit(values: z.infer<typeof contactSchema>) {
     if (!contactingClient) return;
+    setIsSendingEmail(true);
 
-    const mailtoLink = `mailto:${contactingClient.email}?subject=${encodeURIComponent(
-      values.subject
-    )}&body=${encodeURIComponent(values.message)}`;
-    
-    window.location.href = mailtoLink;
-    setIsContactDialogOpen(false);
+    try {
+      await sendEmail(contactingClient.email, values.subject, values.message);
+      toast({
+        title: 'Email Queued!',
+        description: 'Your email has been queued for sending.',
+      });
+      setIsContactDialogOpen(false);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to Send Email',
+        description: 'Could not queue the email. Please check the setup and try again.',
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
   }
 
 
@@ -561,7 +573,7 @@ export default function ClientsPage() {
           <DialogHeader>
             <DialogTitle>Contact {contactingClient?.name}</DialogTitle>
             <DialogDescription>
-              Compose your email below. Clicking 'Send Email' will open your default mail client.
+              Compose your email below. It will be sent from your configured Firebase account.
             </DialogDescription>
           </DialogHeader>
           <Form {...contactForm}>
@@ -604,8 +616,8 @@ export default function ClientsPage() {
                 <Button variant="outline" onClick={() => setIsContactDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">
-                  <Mail className="mr-2 h-4 w-4" />
+                <Button type="submit" disabled={isSendingEmail}>
+                  {isSendingEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
                   Send Email
                 </Button>
               </DialogFooter>
