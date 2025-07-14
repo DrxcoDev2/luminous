@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -50,6 +50,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import type { Client } from '@/types/client';
+import { addClient, getClients } from '@/lib/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const addClientSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -57,16 +60,30 @@ const addClientSchema = z.object({
   phone: z.string().optional(),
 });
 
-const initialClients: Client[] = [
-    { id: '1', name: 'John Doe', email: 'john.doe@example.com', phone: '123-456-7890', status: 'Active' },
-    { id: '2', name: 'Jane Smith', email: 'jane.smith@example.com', phone: '987-654-3210', status: 'Active' },
-    { id: '3', name: 'Sam Wilson', email: 'sam.wilson@example.com', phone: '555-555-5555', status: 'Inactive' },
-];
-
 export default function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>(initialClients);
+  const [clients, setClients] = useState<Client[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    async function fetchClients() {
+      try {
+        const fetchedClients = await getClients();
+        setClients(fetchedClients);
+      } catch (error) {
+         toast({
+          variant: 'destructive',
+          title: 'Uh oh! Something went wrong.',
+          description: 'Could not fetch clients. Please try again later.',
+        });
+      } finally {
+        setIsFetching(false);
+      }
+    }
+    fetchClients();
+  }, [toast]);
 
   const form = useForm<z.infer<typeof addClientSchema>>({
     resolver: zodResolver(addClientSchema),
@@ -79,18 +96,44 @@ export default function ClientsPage() {
 
   async function onSubmit(values: z.infer<typeof addClientSchema>) {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const newClient: Client = {
-        id: (clients.length + 1).toString(),
-        ...values,
-        status: 'Active',
-    };
-    setClients(prev => [...prev, newClient]);
-    setIsLoading(false);
-    setIsDialogOpen(false);
-    form.reset();
+    try {
+        const newClientId = await addClient(values);
+        const newClient: Client = {
+            id: newClientId,
+            ...values,
+            status: 'Active',
+        };
+        setClients(prev => [...prev, newClient]);
+        setIsDialogOpen(false);
+        form.reset();
+        toast({
+            title: 'Success!',
+            description: 'New client has been added.',
+        });
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Uh oh! Something went wrong.',
+            description: 'Could not add the client. Please try again.',
+        });
+    } finally {
+        setIsLoading(false);
+    }
   }
+
+  const TableSkeleton = () => (
+    <TableBody>
+      {[...Array(3)].map((_, i) => (
+        <TableRow key={i}>
+          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+          <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
+          <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+          <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  );
 
   return (
     <div className="p-4 md:p-8">
@@ -191,41 +234,43 @@ export default function ClientsPage() {
                 </TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-                {clients.length > 0 ? clients.map((client) => (
-                    <TableRow key={client.id}>
-                        <TableCell className="font-medium">{client.name}</TableCell>
-                        <TableCell>{client.email}</TableCell>
-                        <TableCell className="hidden md:table-cell">{client.phone || 'N/A'}</TableCell>
-                        <TableCell>
-                           <Badge variant={client.status === 'Active' ? 'default' : 'secondary'}>
-                            {client.status}
-                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button aria-haspopup="true" size="icon" variant="ghost">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                    <span className="sr-only">Toggle menu</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                                    <DropdownMenuItem>Delete</DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </TableCell>
-                    </TableRow>
-                )) : (
-                    <TableRow>
-                        <TableCell colSpan={5} className="text-center h-24">
-                            No clients yet. Add one to get started!
-                        </TableCell>
-                    </TableRow>
-                )}
-            </TableBody>
+            {isFetching ? <TableSkeleton /> : (
+              <TableBody>
+                  {clients.length > 0 ? clients.map((client) => (
+                      <TableRow key={client.id}>
+                          <TableCell className="font-medium">{client.name}</TableCell>
+                          <TableCell>{client.email}</TableCell>
+                          <TableCell className="hidden md:table-cell">{client.phone || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant={client.status === 'Active' ? 'default' : 'secondary'}>
+                              {client.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                              <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                      <Button aria-haspopup="true" size="icon" variant="ghost">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                      <span className="sr-only">Toggle menu</span>
+                                      </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                      <DropdownMenuItem>Edit</DropdownMenuItem>
+                                      <DropdownMenuItem>Delete</DropdownMenuItem>
+                                  </DropdownMenuContent>
+                              </DropdownMenu>
+                          </TableCell>
+                      </TableRow>
+                  )) : (
+                      <TableRow>
+                          <TableCell colSpan={5} className="text-center h-24">
+                              No clients yet. Add one to get started!
+                          </TableCell>
+                      </TableRow>
+                  )}
+              </TableBody>
+            )}
           </Table>
         </CardContent>
       </Card>
