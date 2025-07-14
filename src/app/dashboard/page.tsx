@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { logOut } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutDashboard, Loader2, LogOut, Settings, UserCircle } from 'lucide-react';
+import { Calendar, LayoutDashboard, Loader2, LogOut, Settings, UserCircle, Users } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -60,6 +60,18 @@ export default function DashboardPage() {
               <SidebarMenuButton href="/dashboard" isActive>
                 <LayoutDashboard className="transition-transform duration-300 group-hover/menu-item:rotate-12" />
                 Dashboard
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="#">
+                <Users className="transition-transform duration-300 group-hover/menu-item:rotate-12" />
+                Clients
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="#">
+                <Calendar className="transition-transform duration-300 group-hover/menu-item:rotate-12" />
+                Calendar
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
