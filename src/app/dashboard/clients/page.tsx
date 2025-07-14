@@ -172,14 +172,14 @@ export default function ClientsPage() {
         postalCode: selectedClient.postalCode || '',
         nationality: selectedClient.nationality || '',
         dateOfBirth: selectedClient.dateOfBirth || '',
-        appointmentDateTime: selectedClient.appointmentDateTime ? selectedClient.appointmentDateTime.substring(0, 16) : '',
+        appointmentDateTime: selectedClient.appointmentDateTime ? formatInTimezone(selectedClient.appointmentDateTime, "yyyy-MM-dd'T'HH:mm") : '',
       });
       fetchNotes(selectedClient.id);
     } else {
       form.reset({ name: '', email: '', phone: '', address: '', postalCode: '', nationality: '', dateOfBirth: '', appointmentDateTime: '' });
       setNotes([]);
     }
-  }, [selectedClient, form]);
+  }, [selectedClient, form, timezone, formatInTimezone]);
 
   const handleAddNewClientClick = () => {
     setSelectedClient(null);
