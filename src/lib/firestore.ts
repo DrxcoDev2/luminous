@@ -1,9 +1,9 @@
 import { db } from './firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, where, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import type { Client } from '@/types/client';
 
 // Define the type for the data being added to Firestore, excluding the id
-type AddClientData = Omit<Client, 'id' | 'status' | 'userId'>;
+type AddClientData = Omit<Client, 'id' | 'status' | 'userId' | 'createdAt'>;
 
 // Function to add a new client to the 'clients' collection
 export const addClient = async (clientData: AddClientData, userId: string) => {
@@ -34,7 +34,10 @@ export const getClients = async (userId: string): Promise<Client[]> => {
         const querySnapshot = await getDocs(q);
         const clients: Client[] = [];
         querySnapshot.forEach((doc) => {
-            clients.push({ id: doc.id, ...doc.data() } as Client);
+            const data = doc.data();
+            // Ensure createdAt is a Timestamp object, handle potential nulls
+            const createdAt = data.createdAt instanceof Timestamp ? data.createdAt : new Timestamp(0, 0);
+            clients.push({ id: doc.id, ...data, createdAt } as Client);
         });
         return clients;
     } catch (e) {

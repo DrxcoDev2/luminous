@@ -3,13 +3,23 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Calendar, ArrowRight, Loader2 } from 'lucide-react';
+import { Users, Calendar, ArrowRight, BarChart } from 'lucide-react';
 import Link from 'next/link';
 import type { Client } from '@/types/client';
 import { useAuth } from '@/contexts/auth-context';
 import { getClients } from '@/lib/firestore';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfWeek, endOfWeek, subWeeks, formatISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+
+const chartConfig = {
+  clients: {
+    label: "New Clients",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig;
+
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -41,20 +51,41 @@ export default function DashboardPage() {
       .sort((a, b) => new Date(a.appointmentDateTime!).getTime() - new Date(b.appointmentDateTime!).getTime());
     return upcoming[0];
   }, [clients]);
+  
+  const weeklyClientsData = useMemo(() => {
+    const now = new Date();
+    const last6Weeks = Array.from({ length: 6 }).map((_, i) => {
+      const weekStart = startOfWeek(subWeeks(now, 5 - i));
+      return {
+        date: format(weekStart, 'MMM d'),
+        clients: 0,
+      };
+    });
 
-  const WelcomeCard = () => (
-    <Card className="lg:col-span-2">
-      <CardHeader>
-        <CardTitle className="text-2xl">Welcome Back, {user?.displayName || user?.email?.split('@')[0] || 'User'}!</CardTitle>
-        <CardDescription>
-          Here's a quick overview of your workspace.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-         <p>You can quickly access your clients and calendar from here.</p>
-      </CardContent>
-    </Card>
-  );
+    clients.forEach(client => {
+      if (client.createdAt) {
+        const createdAtDate = client.createdAt.toDate();
+        const weekIndex = last6Weeks.findIndex(week => {
+            const weekStart = startOfWeek(subWeeks(now, 5 - last6Weeks.indexOf(week)));
+            const weekEnd = endOfWeek(subWeeks(now, 5 - last6Weeks.indexOf(week)));
+            return createdAtDate >= weekStart && createdAtDate <= weekEnd;
+        });
+
+        const currentWeekStart = startOfWeek(now);
+        const currentWeekIndex = last6Weeks.length -1;
+        if( createdAtDate >= currentWeekStart && createdAtDate <= now) {
+            if(last6Weeks[currentWeekIndex]) {
+               last6Weeks[currentWeekIndex].clients++;
+            }
+        } else if (weekIndex !== -1) {
+            last6Weeks[weekIndex].clients++;
+        }
+      }
+    });
+
+    return last6Weeks;
+  }, [clients]);
+
 
   const TotalClientsCard = () => (
     <Link href="/dashboard/clients" className="block group">
@@ -82,7 +113,7 @@ export default function DashboardPage() {
 
   const CalendarCard = () => (
     <Link href="/dashboard/calendar" className="block group">
-       <Card className="lg:col-span-2 h-full flex flex-col justify-between hover:bg-accent transition-colors">
+       <Card className="h-full flex flex-col justify-between hover:bg-accent transition-colors">
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="text-xl">Calendar</CardTitle>
@@ -102,7 +133,7 @@ export default function DashboardPage() {
             <div>
               <p className="font-semibold text-lg">{nextAppointment.name}</p>
               <p className="text-muted-foreground">
-                {format(parseISO(nextAppointment.appointmentDateTime!), 'PPPPp')}
+                {format(parseISO(nextAppointment.appointmentDateTime!), 'PPp')}
               </p>
             </div>
           ) : (
@@ -117,10 +148,36 @@ export default function DashboardPage() {
     </Link>
   );
 
+  const WeeklyClientsChart = () => (
+    <Card className="lg:col-span-2">
+       <CardHeader>
+         <CardTitle className="text-xl">Weekly Client Signups</CardTitle>
+         <CardDescription>New clients added in the last 6 weeks.</CardDescription>
+       </CardHeader>
+       <CardContent>
+        {isLoading ? (
+          <div className="w-full h-[120px] flex items-center justify-center">
+            <Skeleton className="w-full h-full" />
+          </div>
+        ) : (
+          <ChartContainer config={chartConfig} className="w-full h-[120px]">
+            <RechartsBarChart accessibilityLayer data={weeklyClientsData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+              <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value.slice(0, 3)} />
+              <YAxis tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} />
+              <Tooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+              <Bar dataKey="clients" fill="var(--color-clients)" radius={4} />
+            </RechartsBarChart>
+          </ChartContainer>
+        )}
+       </CardContent>
+    </Card>
+  );
+
+
   return (
     <div className="p-4 md:p-8">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-[180px]">
-        <WelcomeCard />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-[minmax(180px,auto)]">
+        <WeeklyClientsChart />
         <TotalClientsCard />
         <CalendarCard />
       </div>
