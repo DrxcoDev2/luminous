@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -17,6 +17,7 @@ import type { UserSettings } from '@/types/user-settings';
 import { getUserSettings, saveUserSettings } from '@/lib/user-settings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { timezones } from '@/lib/timezones';
+import { getCountryFlag } from '@/lib/utils';
 
 const settingsSchema = z.object({
   companyName: z.string().min(2, { message: 'Company name must be at least 2 characters.' }).optional().or(z.literal('')),
@@ -36,6 +37,15 @@ export default function SettingsPage() {
       timezone: 'UTC',
     },
   });
+
+  const selectedTimezoneValue = form.watch('timezone');
+
+  const selectedTimezoneLabel = useMemo(() => {
+    const tz = timezones.find(t => t.value === selectedTimezoneValue);
+    if (!tz) return 'Select your timezone';
+    return `${getCountryFlag(tz.countryCode)} ${tz.label}`;
+  }, [selectedTimezoneValue]);
+
 
   useEffect(() => {
     async function fetchSettings() {
@@ -145,13 +155,15 @@ export default function SettingsPage() {
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                                 <SelectTrigger className="pl-10">
-                                <SelectValue placeholder="Select your timezone" />
+                                  <SelectValue asChild>
+                                    <span>{selectedTimezoneLabel}</span>
+                                  </SelectValue>
                                 </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                                 {timezones.map(tz => (
                                 <SelectItem key={tz.value} value={tz.value}>
-                                    {tz.label}
+                                    {getCountryFlag(tz.countryCode)} {tz.label}
                                 </SelectItem>
                                 ))}
                             </SelectContent>
