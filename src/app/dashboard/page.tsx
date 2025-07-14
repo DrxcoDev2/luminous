@@ -6,7 +6,21 @@ import { Button } from '@/components/ui/button';
 import { logOut } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { LayoutDashboard, Loader2, LogOut, Settings, UserCircle } from 'lucide-react';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
+import { Logo } from '@/components/logo';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -35,19 +49,64 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Dashboard</CardTitle>
-          <CardDescription>Welcome back, {user.email}!</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p>This is your protected dashboard area. Only logged-in users can see this page.</p>
-          <Button onClick={handleLogout} className="mt-6 w-full">
-            Log Out
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader>
+          <Logo />
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="/dashboard" isActive>
+                <LayoutDashboard />
+                Dashboard
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton href="#">
+                <Settings />
+                Settings
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter>
+           <div className="flex items-center gap-2">
+             <Avatar className="h-8 w-8">
+               <AvatarImage src={user.photoURL ?? ''} />
+                <AvatarFallback>
+                  <UserCircle />
+                </AvatarFallback>
+             </Avatar>
+             <span className="text-sm text-muted-foreground truncate">{user.email}</span>
+           </div>
+          <Button variant="ghost" size="icon" onClick={handleLogout} className="h-8 w-8">
+            <LogOut />
           </Button>
-        </CardContent>
-      </Card>
-    </div>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex items-center justify-between p-4 border-b">
+          <SidebarTrigger />
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <div></div>
+        </header>
+        <div className="p-8">
+          <Card className="w-full max-w-4xl">
+            <CardHeader>
+              <CardTitle className="text-2xl">Welcome Back!</CardTitle>
+              <CardDescription>
+                This is your dashboard. You can add your main content here.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>
+                The sidebar is collapsible and responsive. Try resizing your browser window to see it in action.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
