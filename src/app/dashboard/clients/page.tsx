@@ -168,7 +168,9 @@ export default function ClientsPage() {
         postalCode: editingClient.postalCode || '',
         nationality: editingClient.nationality || '',
         dateOfBirth: editingClient.dateOfBirth || '',
-        appointmentDateTime: editingClient.appointmentDateTime ? editingClient.appointmentDateTime.substring(0, 16) : '',
+        appointmentDateTime: editingClient.appointmentDateTime
+          ? editingClient.appointmentDateTime.substring(0, 16)
+          : '',
       });
     } else {
       form.reset({
@@ -225,7 +227,7 @@ export default function ClientsPage() {
       postalCode: values.postalCode || undefined,
       nationality: values.nationality || undefined,
       dateOfBirth: values.dateOfBirth || undefined,
-      appointmentDateTime: values.appointmentDateTime ? `${values.appointmentDateTime}:00` : undefined,
+      appointmentDateTime: values.appointmentDateTime ? values.appointmentDateTime : undefined,
     };
 
 
