@@ -64,7 +64,7 @@ import { addClient, getClients, updateClient, deleteClient, sendEmail } from '@/
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 
 
@@ -210,7 +210,7 @@ export default function ClientsPage() {
       postalCode: values.postalCode || undefined,
       nationality: values.nationality || undefined,
       dateOfBirth: values.dateOfBirth || undefined,
-      appointmentDateTime: values.appointmentDateTime ? `${values.appointmentDateTime}:00.000Z` : undefined,
+      appointmentDateTime: values.appointmentDateTime || undefined,
     };
 
 
@@ -342,7 +342,7 @@ export default function ClientsPage() {
                           <TableCell>{client.email}</TableCell>
                            <TableCell className="hidden md:table-cell">
                             {client.appointmentDateTime ? 
-                                `${format(new Date(client.appointmentDateTime), 'PP')} @ ${format(new Date(client.appointmentDateTime), 'HH:mm')}` 
+                                `${format(parseISO(client.appointmentDateTime), 'PP')} @ ${format(parseISO(client.appointmentDateTime), 'HH:mm')}` 
                                 : 'N/A'
                             }
                           </TableCell>
