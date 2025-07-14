@@ -4,4 +4,5 @@ export interface UserSettings {
   userId: string;
   companyName?: string;
   timezone?: string;
+  accountType?: 'individual' | 'business';
 }

@@ -1,3 +1,4 @@
+
 'use client';
 export const dynamic = 'force-dynamic';
 
@@ -30,11 +31,16 @@ import { useState } from 'react';
 import { Github, Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
 import { useAuth } from '@/contexts/auth-context';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { saveUserSettings } from '@/lib/user-settings';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Invalid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
+  accountType: z.enum(['individual', 'business'], {
+    required_error: 'You need to select an account type.',
+  }),
 });
 
 export default function RegisterPage() {
@@ -55,7 +61,14 @@ export default function RegisterPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await signUp(values.email, values.password);
+      const userCredential = await signUp(values.email, values.password);
+      const newUser = userCredential.user;
+      if(newUser) {
+        await saveUserSettings(newUser.uid, {
+            userId: newUser.uid,
+            accountType: values.accountType
+        })
+      }
       // The redirection is now handled by the AuthProvider
     } catch (error: unknown) {
       let description = 'An unexpected error occurred. Please try again.';
@@ -171,6 +184,40 @@ export default function RegisterPage() {
                     <FormLabel>Password</FormLabel>
                     <FormControl>
                       <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="accountType"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Are you an individual or a business?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1"
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="individual" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Individual
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="business" />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            Business
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
