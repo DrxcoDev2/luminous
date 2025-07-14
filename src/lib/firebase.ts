@@ -1,7 +1,7 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+
+import { initializeApp, getApps, getApp, type FirebaseApp, type FirebaseOptions } from "firebase/app";
+import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,9 +13,26 @@ const firebaseConfig: FirebaseOptions = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase only if the API key is provided
-const app = !getApps().length && firebaseConfig.apiKey ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
 
+// Initialize Firebase only if the API key is provided and no apps are initialized.
+// This check prevents errors during the build process for static pages.
+if (firebaseConfig.apiKey && !getApps().length) {
+  app = initializeApp(firebaseConfig);
+} else {
+  // If an app is already initialized, get it. Otherwise, app remains undefined.
+  app = getApps().length > 0 ? getApp() : (undefined as any);
+}
+
+// Only initialize auth and db if the app has been successfully initialized.
+if (app) {
+  auth = getAuth(app);
+  db = getFirestore(app);
+}
+
+// Export the potentially uninitialized instances.
+// Code that uses these must handle the case where they might be undefined,
+// which is already done by the dynamic rendering logic on pages that need auth.
 export { app, auth, db };
