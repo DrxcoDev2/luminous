@@ -37,7 +37,7 @@ export default function HeroSection() {
             height="450"
             alt="Hero"
             className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
-            data-ai-hint="scheduling illustration"
+            data-ai-hint="internet illustration"
           />
         </div>
       </div>
