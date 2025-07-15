@@ -9,7 +9,6 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 export const metadata: Metadata = {
   title: 'Luminous Landing',
   description: 'Illuminate your path to success with modern landing pages.',
-  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
