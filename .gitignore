@@ -39,3 +39,8 @@ next-env.d.ts
 
 .idx
 .vscode
+
+app/build
+*.keystore
+*.aab
+*.ldsig
