@@ -22,6 +22,13 @@ export const addClient = async (clientData: AddClientData, userId: string) => {
         status: 'Active',
         createdAt: serverTimestamp(),
     };
+
+    // Remove undefined fields before sending to Firestore
+    Object.keys(dataWithUserAndTimestamp).forEach(key => {
+        if (dataWithUserAndTimestamp[key as keyof typeof dataWithUserAndTimestamp] === undefined) {
+            delete dataWithUserAndTimestamp[key as keyof typeof dataWithUserAndTimestamp];
+        }
+    });
     
     const docRef = await addDoc(collection(db, 'clients'), dataWithUserAndTimestamp);
     return docRef.id;
