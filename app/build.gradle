@@ -23,7 +23,7 @@ plugins {
 def twaManifest = [
     applicationId: 'com.onrender.luminous_95i4.twa',
     hostName: 'luminous-95i4.onrender.com', // The domain being opened in the TWA.
-    launchUrl: '/login', // The start path for the TWA. Must be relative to the domain.
+    launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
     name: 'Luminous', // The application name.
     launcherName: 'Luminous', // The name shown on the Android Launcher.
     themeColor: '#8B5CF6', // The color used for the status bar.

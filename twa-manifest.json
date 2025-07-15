@@ -12,7 +12,7 @@
   "navigationDividerColorDark": "#000000",
   "backgroundColor": "#FFFFFF",
   "enableNotifications": true,
-  "startUrl": "/login",
+  "startUrl": "/",
   "iconUrl": "https://luminous-95i4.onrender.com/logo.svg",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
