@@ -1,19 +1,12 @@
 
 'use client';
 
-import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/auth-context';
 import { Inter } from 'next/font/google';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-
-// Even with 'use client', you can still define metadata
-export const metadata: Metadata = {
-  title: 'Luminous Landing',
-  description: 'Illuminate your path to success with modern landing pages.',
-};
 
 export default function RootLayout({
   children,

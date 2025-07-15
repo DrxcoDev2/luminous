@@ -2,13 +2,14 @@
 import type {Config} from 'tailwindcss';
 import {fontFamily} from 'tailwindcss/defaultTheme';
 import tailwindcssAnimate from 'tailwindcss-animate';
+import path from 'path';
 
 export default {
   darkMode: ['class'],
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    path.join(process.cwd(), './src/pages/**/*.{js,ts,jsx,tsx,mdx}'),
+    path.join(process.cwd(), './src/components/**/*.{js,ts,jsx,tsx,mdx}'),
+    path.join(process.cwd(), './src/app/**/*.{js,ts,jsx,tsx,mdx}'),
   ],
   theme: {
     extend: {
