@@ -5,8 +5,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useForm, useForm as useContactForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit, Home, Milestone, CalendarIcon, Globe, Clock, Info, MessageSquare, Send, Heart, Tag } from 'lucide-react';
-
+import { PlusCircle, MoreHorizontal, User, Mail, Phone, Loader2, Trash2, Edit, Home, Milestone, CalendarIcon, Globe, Clock, Info, Send, Heart } from 'lucide-react';
+import { Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -173,6 +173,18 @@ export default function ClientsPage() {
   }, [timezone]);
 
 
+  const fetchNotes = useCallback(async (clientId: string) => {
+    setIsFetchingNotes(true);
+    try {
+      const fetchedNotes = await getNotes(clientId);
+      setNotes(fetchedNotes);
+    } catch {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch client notes.' });
+    } finally {
+      setIsFetchingNotes(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     if (selectedClient) {
       form.reset({
@@ -191,7 +203,7 @@ export default function ClientsPage() {
       form.reset({ name: '', email: '', phone: '', address: '', postalCode: '', nationality: '', dateOfBirth: '', appointmentDateTime: '', interests: [] });
       setNotes([]);
     }
-  }, [selectedClient, form, formatInTimezone]);
+  }, [selectedClient, form, formatInTimezone, fetchNotes]);
 
   const handleAddNewClientClick = () => {
     setSelectedClient(null);
@@ -234,7 +246,7 @@ export default function ClientsPage() {
         toast({ title: 'Success!', description: 'Client has been updated.' });
       } else {
         const newClientId = await addClient(clientData, user.uid);
-        const newClient: Client = { id: newClientId, ...clientData, status: 'Active', userId: user.uid, createdAt: new Date() as any };
+        const newClient: Client = { id: newClientId, ...clientData, status: 'Active', userId: user.uid, createdAt: Timestamp.now() };
         setClients(prev => [newClient, ...prev]);
         toast({ title: 'Success!', description: 'New client has been added.' });
       }
@@ -277,18 +289,6 @@ export default function ClientsPage() {
       setIsSendingEmail(false);
     }
   }
-
-  const fetchNotes = async (clientId: string) => {
-    setIsFetchingNotes(true);
-    try {
-      const fetchedNotes = await getNotes(clientId);
-      setNotes(fetchedNotes);
-    } catch {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch client notes.' });
-    } finally {
-      setIsFetchingNotes(false);
-    }
-  };
 
   async function onNoteSubmit(values: z.infer<typeof noteSchema>) {
     if (!selectedClient || !user) return;

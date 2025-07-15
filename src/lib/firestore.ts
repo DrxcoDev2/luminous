@@ -1,6 +1,6 @@
 
 import { db } from './firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, where, orderBy, Timestamp, arrayUnion, arrayRemove, getDoc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, where, orderBy, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import type { Client } from '@/types/client';
 import type { ClientNote } from '@/types/client-note';
 import type { Feedback } from '@/types/feedback';
@@ -133,7 +133,6 @@ export const getNotes = async (clientId: string): Promise<ClientNote[]> => {
         const notes: ClientNote[] = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            const createdAt = data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now();
             notes.push({ id: doc.id, ...data } as ClientNote);
         });
         return notes;
@@ -193,8 +192,7 @@ export const getFeedback = async (): Promise<Feedback[]> => {
         const feedback: Feedback[] = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            const createdAt = data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now();
-            feedback.push({ id: doc.id, ...data, createdAt } as Feedback);
+            feedback.push({ id: doc.id, ...data } as Feedback);
         });
         return feedback;
     } catch (e) {

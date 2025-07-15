@@ -104,7 +104,7 @@ export default function TeamPage() {
       } else {
         toast({ variant: 'destructive', title: 'User not found', description: 'No user exists with that email address.' });
       }
-    } catch (error) {
+    } catch {
       toast({ variant: 'destructive', title: 'Search failed', description: 'An error occurred while searching for the user.' });
     } finally {
       setIsSearching(false);
@@ -134,7 +134,7 @@ export default function TeamPage() {
       form.reset();
       toast({ title: 'Success!', description: `${searchedUser.name || searchedUser.email} has been added to the team.` });
 
-    } catch (error) {
+    } catch {
       toast({ variant: 'destructive', title: 'Failed to add member', description: 'An error occurred. Please try again.' });
     } finally {
       setIsAdding(false);
@@ -153,7 +153,7 @@ export default function TeamPage() {
        await saveUserSettings(userToRemove.uid, { teamId: null });
       setTeamMembers(prev => prev.filter(m => m.uid !== userToRemove.uid));
       toast({ title: 'Success!', description: `${userToRemove.name || userToRemove.email} has been removed from the team.` });
-    } catch (error) {
+    } catch {
       toast({ variant: 'destructive', title: 'Failed to remove member', description: 'An error occurred. Please try again.' });
     } finally {
       setIsRemoving(null);
@@ -267,7 +267,7 @@ export default function TeamPage() {
               ))
             ) : (
               <p className="text-muted-foreground text-center py-4">
-                You haven't added any team members yet.
+                You haven&apos;t added any team members yet.
               </p>
             )}
           </div>

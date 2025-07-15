@@ -52,7 +52,7 @@ function FeedbackForm() {
             });
             toast({ title: 'Success!', description: 'Thank you for your feedback!' });
             form.reset({ rating: 0, comment: '' });
-        } catch (error) {
+        } catch {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not submit feedback. Please try again.' });
         } finally {
             setIsSubmitting(false);

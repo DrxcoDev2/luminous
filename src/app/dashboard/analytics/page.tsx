@@ -3,11 +3,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Calendar, CalendarCheck, CalendarX } from 'lucide-react';
+import { Users, Calendar, CalendarCheck } from 'lucide-react';
 import type { Client } from '@/types/client';
 import { useAuth } from '@/contexts/auth-context';
 import { getClients } from '@/lib/firestore';
-import { format, parseISO, startOfMonth } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart, XAxis, YAxis, Tooltip, Pie, PieChart, Cell } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
