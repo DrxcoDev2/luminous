@@ -1,8 +1,18 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
 import Footer from '@/components/footer';
 import Header from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function PolicyPage() {
+  const [currentDate, setCurrentDate] = useState('');
+
+  useEffect(() => {
+    setCurrentDate(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <Header />
@@ -12,7 +22,7 @@ export default function PolicyPage() {
             <CardTitle className="text-3xl md:text-4xl">Terms and Conditions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 text-muted-foreground prose prose-gray dark:prose-invert">
-            <p>Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p>Last updated: {currentDate}</p>
             <div className="space-y-4">
               <h3 className="text-xl font-semibold text-foreground">1. Introduction</h3>
               <p>
