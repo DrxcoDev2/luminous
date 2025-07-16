@@ -85,3 +85,9 @@ npm run dev
 ```
 
 The application will be available at [http://localhost:3000](http://localhost:3000).
+
+## License
+
+This project is licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for the full license text.
+
+The Apache License is a permissive free software license that allows users to use the software for any purpose, to distribute it, to modify it, and to distribute modified versions of the software under the terms of the license, without worrying about royalties.
