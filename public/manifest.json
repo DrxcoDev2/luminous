@@ -2,7 +2,7 @@
   "name": "Luminous",
   "short_name": "Luminous",
   "description": "Effortlessly Manage Your Client Appointments",
-  "start_url": "/",
+  "start_url": "/login",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#8B5CF6",
