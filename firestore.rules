@@ -2,57 +2,90 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper Functions
+  
+    // Helper function to check if a user is signed in
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isUser(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    // Helper function to get a document's data
+    function getDoc(path) {
+      return get(path).data;
     }
 
-    // Check if the requesting user is the owner of a specific team.
-    function isTeamOwner(teamId) {
-      return isSignedIn() && get(/databases/$(database)/documents/teams/$(teamId)).data.ownerId == request.auth.uid;
+    // Helper function to check if a user is an owner of a given team
+    function isTeamOwner(teamId, userId) {
+      return getDoc(/databases/$(database)/documents/teams/$(teamId)).ownerId == userId;
     }
 
-    // Check if the write operation only affects the 'teamId' field.
-    function isOnlyChangingTeamId() {
-      return request.resource.data.keys().hasOnly(['teamId']);
-    }
-
-    // --- Collection Rules ---
-
-    match /clients/{clientId} {
-      allow read, write: if isSignedIn(); // Simplified for now, can be tightened later
-    }
-
-    match /feedback/{feedbackId} {
-      allow read, write: if isSignedIn();
-    }
-
-    match /mail/{mailId} {
-      allow create: if isSignedIn();
-    }
-
-    match /teams/{teamId} {
+    // --- User Settings Rules ---
+    match /userSettings/{userId} {
+      // Anyone signed in can read user settings (e.g., to find a user by email for an invite)
       allow read: if isSignedIn();
-      // Allow update only if the user is the team owner.
-      allow update: if isTeamOwner(teamId);
-      // No one can create or delete teams directly except through backend logic.
+
+      // A user can write to their own settings document.
+      // OR a team owner can write the `teamId` to another user's settings doc
+      // when adding/removing them from a team.
+      allow write: if isSignedIn() && (
+        // Case 1: Updating your own settings
+        request.auth.uid == userId
+        ||
+        // Case 2: A team owner is updating the teamId of a user.
+        // This covers adding a user to a team and removing them.
+        (
+          request.resource.data.keys().hasOnly(['teamId', 'userId', 'name', 'email', 'companyName', 'timezone', 'accountType', 'notificationHours']) &&
+          isTeamOwner(request.resource.data.teamId, request.auth.uid)
+        )
+         ||
+        // Case 3: A team owner is removing a user from a team (setting teamId to null)
+        ( 
+          request.resource.data.teamId == null && 
+          isTeamOwner(resource.data.teamId, request.auth.uid)
+        )
+      );
+    }
+    
+    // --- Teams Rules ---
+    match /teams/{teamId} {
+      // Allow read only if the user is a member of the team.
+      allow read: if isSignedIn() && request.auth.uid in getDoc(/databases/$(database)/documents/teams/$(teamId)).members.map(member => member.uid);
+
+      // Allow write (adding/removing members) only if the user is the owner.
+      allow update: if isSignedIn() && isTeamOwner(teamId, request.auth.uid);
+      
+      // Nobody can create or delete teams directly except the backend logic
       allow create, delete: if false;
     }
+    
+    // --- Clients Rules ---
+    match /clients/{clientId} {
+      // Allow read/write if the user created the client OR if the user is part of the client's team.
+      allow read, write, delete: if isSignedIn() && 
+        (request.auth.uid == resource.data.userId || 
+         (resource.data.teamId != null && request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.members.map(member => member.uid)));
 
-    match /userSettings/{userId} {
-      allow read: if isSignedIn();
+      // --- Client Notes Subcollection ---
+      match /notes/{noteId} {
+         allow read, write, delete: if isSignedIn() &&
+          (request.auth.uid == get(/databases/$(database)/documents/clients/$(clientId)).data.userId ||
+          (get(/databases/$(database)/documents/clients/$(clientId)).data.teamId != null && request.auth.uid in get(/databases/$(database)/documents/teams/$(get(/databases/$(database)/documents/clients/$(clientId)).data.teamId)).data.members.map(member => member.uid)));
+      }
+    }
 
-      // Allow write under two conditions:
-      // 1. The user is updating their own document.
-      // 2. The user is a team owner modifying *only* the 'teamId' of another user.
-      allow write: if isUser(userId) ||
-                   (isSignedIn() && isTeamOwner(request.resource.data.teamId) && isOnlyChangingTeamId()) ||
-                   (isSignedIn() && isTeamOwner(resource.data.teamId) && isOnlyChangingTeamId());
+    // --- Mail collection for sending emails (write-only) ---
+    match /mail/{mailId} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if false;
+    }
+
+    // --- Feedback collection (write-only for users) ---
+    match /feedback/{feedbackId} {
+      // Any signed-in user can submit feedback
+      allow create: if isSignedIn();
+      
+      // Feedback is admin-readable only, which is handled in app logic, not rules.
+      // Deny direct reads/updates/deletes from clients.
+      allow read, update, delete: if false; 
     }
   }
 }
