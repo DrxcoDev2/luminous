@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
 import { format } from 'date-fns';
+import { Timestamp } from 'firebase/firestore';
 
 const noteSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title must be 100 characters or less.'),
@@ -87,7 +88,7 @@ export default function NotesPage() {
         toast({ title: 'Success!', description: 'Note updated successfully.' });
       } else {
         const newNoteId = await addNote(values, user.uid);
-        const newNote: Note = { id: newNoteId, ...values, userId: user.uid, createdAt: new Date() as any };
+        const newNote: Note = { id: newNoteId, ...values, userId: user.uid, createdAt: Timestamp.now() };
         setNotes([newNote, ...notes]);
         toast({ title: 'Success!', description: 'Note created successfully.' });
       }
@@ -193,7 +194,7 @@ export default function NotesPage() {
       ) : (
         <div className="text-center py-16 border-2 border-dashed rounded-lg">
           <h3 className="text-xl font-semibold">No notes yet</h3>
-          <p className="text-muted-foreground mt-2">Click "Add Note" to create your first one.</p>
+          <p className="text-muted-foreground mt-2">Click &quot;Add Note&quot; to create your first one.</p>
         </div>
       )}
 
