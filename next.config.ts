@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // ❌ Removido 'output: export' para permitir Server Actions y SSR
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -16,6 +16,9 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  experimental: {
+    serverActions: true, // ✅ habilita Server Actions si estás usándolas
   },
 };
 
