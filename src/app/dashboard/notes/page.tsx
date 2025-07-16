@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
+//import { Timestamp } from 'firebase/firestore';
 
 const noteSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title must be 100 characters or less.'),
