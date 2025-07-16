@@ -4,89 +4,90 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is signed in
+    // Helper Functions
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Helper function to check if a user is the owner of a given team
-    function isTeamOwner(teamId) {
-      return isSignedIn() && get(/databases/$(database)/documents/teams/$(teamId)).data.ownerId == request.auth.uid;
-    }
-
-    // Rules for user settings
+    // --- User Settings ---
+    // Anyone can read user settings (to find users by email).
+    // Users can only write to their own settings, UNLESS a team owner is modifying the teamId.
     match /userSettings/{userId} {
-      // Anyone can look up a user's settings (e.g., to find their email to invite them)
       allow read: if isSignedIn();
-
-      // Users can update their own settings.
-      // A team owner can also update the teamId of another user.
-      allow write: if isSignedIn() && (
-        request.auth.uid == userId ||
+      allow write: if isSignedIn() && 
         (
-          request.resource.data.keys().hasOnly(['teamId']) &&
-          ( isTeamOwner(request.resource.data.teamId) || isTeamOwner(resource.data.teamId) )
-        )
-      );
+          // Allow user to write to their own settings
+          request.auth.uid == userId
+          ||
+          // Allow a team owner to update a user's teamId
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId']) &&
+            get(/databases/$(database)/documents/teams/$(request.resource.data.teamId)).data.ownerId == request.auth.uid
+          )
+           ||
+          // Allow a team owner to remove a user's teamId
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId']) &&
+            get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.ownerId == request.auth.uid
+          )
+        );
     }
 
-    // Rules for teams
+    // --- Teams ---
+    // Users can read a team's data if they are a member.
+    // Only the owner can update the team document (add/remove members).
     match /teams/{teamId} {
-      // A user can read a team's data if their UID is in the members list
       allow read: if isSignedIn() && request.auth.uid in resource.data.members.map(member => member.uid);
-
-      // Only the owner of the team can update it (add/remove members)
-      allow update: if isTeamOwner(teamId);
-
-      // No one can create or delete teams directly through client-side code
-      allow create, delete: if false;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.ownerId;
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.ownerId;
     }
 
-    // Rules for clients
+    // --- Clients ---
+    // Users can access clients if they are the creator or if they belong to the client's team.
     match /clients/{clientId} {
-      // A user can manage a client if they are the creator,
-      // or if the client belongs to a team they are a member of.
-      allow read, write, delete: if isSignedIn() && (
-        request.auth.uid == resource.data.userId ||
+      allow read, write, delete: if isSignedIn() && 
         (
-          resource.data.teamId != null &&
-          request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.members.map(member => member.uid)
-        )
-      );
-
-      // A user can create a client if they are signed in.
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+          // Allow access if user is the creator
+          request.auth.uid == resource.data.userId
+          ||
+          // Allow access if user is on the same team as the client
+          (
+            resource.data.teamId != null &&
+            get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.teamId == resource.data.teamId
+          )
+        );
+      allow create: if isSignedIn();
     }
     
-    // Rules for client notes
+    // --- Client Notes (Subcollection) ---
     match /clients/{clientId}/notes/{noteId} {
-        // Inherit permissions from the parent client document
-        allow read, write, delete: if isSignedIn() && (
-            get(/databases/$(database)/documents/clients/$(clientId)).data.userId == request.auth.uid ||
-            (
-                get(/databases/$(database)/documents/clients/$(clientId)).data.teamId != null &&
-                request.auth.uid in get(/databases/$(database)/documents/teams/$(get(/databases/$(database)/documents/clients/$(clientId)).data.teamId)).data.members.map(member => member.uid)
-            )
+        allow read, write, delete: if isSignedIn() &&
+        (
+          // Check parent client permissions
+          get(/databases/$(database)/documents/clients/$(clientId)).data.userId == request.auth.uid
+          ||
+          (
+             get(/databases/$(database)/documents/clients/$(clientId)).data.teamId != null &&
+             get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.teamId == get(/databases/$(database)/documents/clients/$(clientId)).data.teamId
+          )
         );
         allow create: if isSignedIn();
     }
 
-    // Rules for feedback
+
+    // --- Feedback ---
+    // Any authenticated user can submit feedback.
+    // Only the admin can read feedback.
     match /feedback/{feedbackId} {
-      // Only the admin user can read feedback
-      allow read: if isSignedIn() && request.auth.token.email == 'cristianmupe2021@gmail.com';
-      // Any signed-in user can create feedback
       allow create: if isSignedIn();
-      // No one can update or delete feedback
-      allow update, delete: if false;
+      allow read: if isSignedIn() && request.auth.token.email == 'cristianmupe2021@gmail.com';
     }
 
-    // Rules for mail collection (for sending emails)
-    match /mail/{docId} {
-      // Only the backend (via a Cloud Function, which uses admin credentials) can create mail documents
+    // --- Mail ---
+    // This allows the "Trigger Email" extension to work.
+    // Any authenticated user can create a document in the 'mail' collection.
+    match /mail/{mailId} {
       allow create: if isSignedIn();
-      // No one can read, update, or delete emails from the client
-      allow read, update, delete: if false;
     }
   }
 }
