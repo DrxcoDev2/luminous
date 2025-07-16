@@ -171,7 +171,10 @@ export const getNote = async (noteId: string): Promise<Note | null> => {
     const noteRef = doc(db, 'notes', noteId);
     const docSnap = await getDoc(noteRef);
     if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Note;
+        const data = docSnap.data();
+        // Ensure createdAt is a Timestamp object, which is what the Note type expects
+        const createdAt = data.createdAt instanceof Timestamp ? data.createdAt : new Timestamp(0, 0);
+        return { id: docSnap.id, ...data, createdAt } as Note;
     }
     return null;
 }
