@@ -4,56 +4,67 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is signed in
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // --- User Settings ---
-    // Manages user-specific information like company name, timezone, and teamId.
+    function isUser(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Function to check if the requesting user is the owner of a given team
+    function isTeamOwner(teamId) {
+      return isSignedIn() && get(/databases/$(database)/documents/teams/$(teamId)).data.ownerId == request.auth.uid;
+    }
+
+    // users can manage their own settings
+    // team owners can update teamId for other users
     match /userSettings/{userId} {
-      // Allow any signed-in user to read settings (needed for searching users by email).
       allow read: if isSignedIn();
-      
-      // Allow a user to write to their own settings.
-      // Also allow a team owner to update the teamId of another user.
-      allow write: if isSignedIn() && (
-        // Case 1: User is updating their own document
-        request.auth.uid == userId ||
-        // Case 2: A team owner is updating another user's teamId
-        get(/databases/$(database)/documents/teams/$(request.resource.data.teamId)).data.ownerId == request.auth.uid
-      );
+      allow write: if isUser(userId) || 
+                     (isTeamOwner(request.resource.data.teamId) && request.resource.data.keys().hasOnly(['teamId'])) ||
+                     (isTeamOwner(resource.data.teamId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId']));
     }
 
-    // --- Teams ---
-    // Manages team members and ownership.
+    // Team data can be read by its members and updated by its owner
     match /teams/{teamId} {
-      // Allow read if the user is a member of the team.
-      allow read: if isSignedIn() && request.auth.uid in resource.data.members.map(member => member.uid);
-      
-      // Allow write (adding/removing members) only if the user is the owner.
-      allow write: if isSignedIn() && request.auth.uid == resource.data.ownerId;
+      allow read: if isSignedIn() && request.auth.uid in resource.data.members.map(m => m.uid);
+      allow update: if isTeamOwner(teamId);
+      allow create: if isUser(request.resource.data.ownerId);
     }
 
-    // --- Clients ---
-    // Manages client data.
+    // users can manage their own clients, or team clients if they are part of the team
     match /clients/{clientId} {
-      // Allow read/write if the user created the client OR if the user is part of the client's team.
-      allow read, write: if isSignedIn() && 
-        (request.auth.uid == resource.data.userId || 
-         get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.teamId == resource.data.teamId);
+      function isClientOwner() {
+        return isUser(resource.data.userId);
+      }
+      
+      function isClientTeamMember() {
+          return isSignedIn() && resource.data.teamId != null && 
+                 get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.teamId == resource.data.teamId;
+      }
+      
+      allow read, write: if isClientOwner() || isClientTeamMember();
+      allow create: if isUser(request.resource.data.userId);
     }
 
-    // --- Mail ---
-    // Used for triggering emails.
+    // Mail collection for sending emails
     match /mail/{docId} {
-      allow create: if isSignedIn();
+        allow create: if isSignedIn();
+    }
+    
+    // Feedback collection for user submissions
+    match /feedback/{docId} {
+        allow create: if isSignedIn();
+        allow read: if get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.email == "cristianmupe2021@gmail.com";
     }
 
-    // --- Feedback ---
-    // Used for collecting user feedback.
-    match /feedback/{docId} {
-      allow create: if isSignedIn();
+    // Notes are subcollections of clients
+    match /clients/{clientId}/notes/{noteId} {
+        allow read, write, delete: if get(/databases/$(database)/documents/clients/$(clientId)).data.userId == request.auth.uid ||
+                                    (get(/databases/$(database)/documents/clients/$(clientId)).data.teamId != null &&
+                                    get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.teamId == get(/databases/$(database)/documents/clients/$(clientId)).data.teamId);
     }
   }
 }
