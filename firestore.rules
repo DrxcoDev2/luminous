@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -12,8 +11,7 @@ service cloud.firestore {
     function isUser(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-    
-    // Function to check if the requesting user is the owner of a given team
+
     function isTeamOwner(teamId) {
       return isSignedIn() && get(/databases/$(database)/documents/teams/$(teamId)).data.ownerId == request.auth.uid;
     }
@@ -22,15 +20,22 @@ service cloud.firestore {
     // team owners can update teamId for other users
     match /userSettings/{userId} {
       allow read: if isSignedIn();
-      allow write: if isUser(userId) || 
-                     (isTeamOwner(request.resource.data.teamId) && request.resource.data.keys().hasOnly(['teamId'])) ||
-                     (isTeamOwner(resource.data.teamId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId']));
+      
+      allow write: if isUser(userId) ||
+                   (
+                     request.resource.data.keys().hasOnly(['teamId']) &&
+                     (isTeamOwner(request.resource.data.teamId) || isTeamOwner(resource.data.teamId))
+                   );
     }
 
     // Team data can be read by its members and updated by its owner
     match /teams/{teamId} {
-      allow read: if isSignedIn() && request.auth.uid in resource.data.members.map(m => m.uid);
+      allow read: if isSignedIn() &&
+                  resource.data.members != null &&
+                  resource.data.members[request.auth.uid] == true;
+
       allow update: if isTeamOwner(teamId);
+
       allow create: if isUser(request.resource.data.ownerId);
     }
 
@@ -39,32 +44,37 @@ service cloud.firestore {
       function isClientOwner() {
         return isUser(resource.data.userId);
       }
-      
+
       function isClientTeamMember() {
-          return isSignedIn() && resource.data.teamId != null && 
-                 get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.teamId == resource.data.teamId;
+        return isSignedIn() &&
+               resource.data.teamId != null &&
+               get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.teamId == resource.data.teamId;
       }
-      
+
       allow read, write: if isClientOwner() || isClientTeamMember();
       allow create: if isUser(request.resource.data.userId);
     }
 
     // Mail collection for sending emails
     match /mail/{docId} {
-        allow create: if isSignedIn();
+      allow create: if isSignedIn();
     }
-    
+
     // Feedback collection for user submissions
     match /feedback/{docId} {
-        allow create: if isSignedIn();
-        allow read: if get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.email == "cristianmupe2021@gmail.com";
+      allow create: if isSignedIn();
+      allow read: if get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.email == "cristianmupe2021@gmail.com";
     }
 
     // Notes are subcollections of clients
     match /clients/{clientId}/notes/{noteId} {
-        allow read, write, delete: if get(/databases/$(database)/documents/clients/$(clientId)).data.userId == request.auth.uid ||
-                                    (get(/databases/$(database)/documents/clients/$(clientId)).data.teamId != null &&
-                                    get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.teamId == get(/databases/$(database)/documents/clients/$(clientId)).data.teamId);
+      allow read, write, delete: if
+        get(/databases/$(database)/documents/clients/$(clientId)).data.userId == request.auth.uid ||
+        (
+          get(/databases/$(database)/documents/clients/$(clientId)).data.teamId != null &&
+          get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.teamId ==
+            get(/databases/$(database)/documents/clients/$(clientId)).data.teamId
+        );
     }
   }
 }
