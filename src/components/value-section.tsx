@@ -31,7 +31,7 @@ export default function ValueSection() {
         </div>
         <div className="grid md:grid-cols-3 gap-8">
           {features.map((feature) => (
-            <Card key={feature.title} className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card key={feature.title} className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300 hover:rounded-xl">
               <CardHeader className="items-center">
                 <div className="bg-primary/10 p-4 rounded-full mb-4">
                   {feature.icon}

@@ -19,15 +19,15 @@ export default function Footer() {
             </Link>
           </div>
           <div className="flex justify-center md:justify-end gap-4">
-            <Link href="#" className="text-muted-foreground hover:text-foreground">
+            {/*<Link href="#" className="text-muted-foreground hover:text-foreground">
               <Twitter className="h-5 w-5" />
-            </Link>
-            <Link href="#" className="text-muted-foreground hover:text-foreground">
+            </Link>*/}
+            <Link href="https://github.com/drxcodev2/luminous"  target="_blank" className="text-muted-foreground hover:text-foreground">
               <Github className="h-5 w-5" />
             </Link>
-            <Link href="#" className="text-muted-foreground hover:text-foreground">
+            {/*<Link href="#" className="text-muted-foreground hover:text-foreground">
               <Linkedin className="h-5 w-5" />
-            </Link>
+            </Link>*/}
           </div>
         </div>
          <p className="text-sm text-muted-foreground text-center mt-8">
