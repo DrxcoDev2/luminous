@@ -4,89 +4,55 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper Functions
+    // Helper function to check if a user is signed in
     function isSignedIn() {
       return request.auth != null;
     }
 
     // --- User Settings ---
-    // Anyone can read user settings (to find users by email).
-    // Users can only write to their own settings, UNLESS a team owner is modifying the teamId.
+    // Manages user-specific information like company name, timezone, and teamId.
     match /userSettings/{userId} {
+      // Allow any signed-in user to read settings (needed for searching users by email).
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && 
-        (
-          // Allow user to write to their own settings
-          request.auth.uid == userId
-          ||
-          // Allow a team owner to update a user's teamId
-          (
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId']) &&
-            get(/databases/$(database)/documents/teams/$(request.resource.data.teamId)).data.ownerId == request.auth.uid
-          )
-           ||
-          // Allow a team owner to remove a user's teamId
-          (
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId']) &&
-            get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.ownerId == request.auth.uid
-          )
-        );
+      
+      // Allow a user to write to their own settings.
+      // Also allow a team owner to update the teamId of another user.
+      allow write: if isSignedIn() && (
+        // Case 1: User is updating their own document
+        request.auth.uid == userId ||
+        // Case 2: A team owner is updating another user's teamId
+        get(/databases/$(database)/documents/teams/$(request.resource.data.teamId)).data.ownerId == request.auth.uid
+      );
     }
 
     // --- Teams ---
-    // Users can read a team's data if they are a member.
-    // Only the owner can update the team document (add/remove members).
+    // Manages team members and ownership.
     match /teams/{teamId} {
+      // Allow read if the user is a member of the team.
       allow read: if isSignedIn() && request.auth.uid in resource.data.members.map(member => member.uid);
-      allow update: if isSignedIn() && request.auth.uid == resource.data.ownerId;
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.ownerId;
+      
+      // Allow write (adding/removing members) only if the user is the owner.
+      allow write: if isSignedIn() && request.auth.uid == resource.data.ownerId;
     }
 
     // --- Clients ---
-    // Users can access clients if they are the creator or if they belong to the client's team.
+    // Manages client data.
     match /clients/{clientId} {
-      allow read, write, delete: if isSignedIn() && 
-        (
-          // Allow access if user is the creator
-          request.auth.uid == resource.data.userId
-          ||
-          // Allow access if user is on the same team as the client
-          (
-            resource.data.teamId != null &&
-            get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.teamId == resource.data.teamId
-          )
-        );
-      allow create: if isSignedIn();
-    }
-    
-    // --- Client Notes (Subcollection) ---
-    match /clients/{clientId}/notes/{noteId} {
-        allow read, write, delete: if isSignedIn() &&
-        (
-          // Check parent client permissions
-          get(/databases/$(database)/documents/clients/$(clientId)).data.userId == request.auth.uid
-          ||
-          (
-             get(/databases/$(database)/documents/clients/$(clientId)).data.teamId != null &&
-             get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.teamId == get(/databases/$(database)/documents/clients/$(clientId)).data.teamId
-          )
-        );
-        allow create: if isSignedIn();
-    }
-
-
-    // --- Feedback ---
-    // Any authenticated user can submit feedback.
-    // Only the admin can read feedback.
-    match /feedback/{feedbackId} {
-      allow create: if isSignedIn();
-      allow read: if isSignedIn() && request.auth.token.email == 'cristianmupe2021@gmail.com';
+      // Allow read/write if the user created the client OR if the user is part of the client's team.
+      allow read, write: if isSignedIn() && 
+        (request.auth.uid == resource.data.userId || 
+         get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.teamId == resource.data.teamId);
     }
 
     // --- Mail ---
-    // This allows the "Trigger Email" extension to work.
-    // Any authenticated user can create a document in the 'mail' collection.
-    match /mail/{mailId} {
+    // Used for triggering emails.
+    match /mail/{docId} {
+      allow create: if isSignedIn();
+    }
+
+    // --- Feedback ---
+    // Used for collecting user feedback.
+    match /feedback/{docId} {
       allow create: if isSignedIn();
     }
   }
