@@ -3,65 +3,66 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to get a user's role in a specific team
-    function getTeamRole(teamId, userId) {
-      let members = get(/databases/$(database)/documents/teams/$(teamId)).data.members;
-      let member = members.filter(m => m.uid == userId)[0];
-      return member.role;
-    }
-    
     // Helper function to check if a user is the owner of a team
     function isTeamOwner(teamId, userId) {
-        return getTeamRole(teamId, userId) == 'owner';
+      return get(/databases/$(database)/documents/teams/$(teamId)).data.ownerId == userId;
     }
 
-    // Helper function to check if a user is a member of a team
-    function isTeamMember(teamId, userId) {
-        let members = get(/databases/$(database)/documents/teams/$(teamId)).data.members;
-        return userId in members.map(m => m.uid);
-    }
-
-    // --- Collections ---
-    
-    match /clients/{clientId} {
-      // Allow create if user is authenticated
-      allow create: if request.auth != null;
-      
-      // Allow read, update, delete if user is a member of the client's team
-      allow read, update, delete: if request.auth != null && isTeamMember(resource.data.teamId, request.auth.uid);
-    }
-
-    match /feedback/{feedbackId} {
-      // Allow create if user is authenticated
-      allow create: if request.auth != null;
-      // Admin-only access for read, update, delete
-      allow read, update, delete: if request.auth != null && request.auth.token.email == 'cristianmupe2021@gmail.com';
-    }
-
-    match /mail/{mailId} {
-      // Only allow creating mail documents. Reading/updating/deleting is handled by extensions/server-side code.
-      allow create: if request.auth != null;
-      allow read, update, delete: if false;
-    }
-
-    match /teams/{teamId} {
-      // Any authenticated user can create a team
-      allow create: if request.auth != null;
-      // Only the owner can read, update, or delete the team document
-      allow read, update, delete: if request.auth != null && isTeamOwner(teamId, request.auth.uid);
-    }
-
+    // Rules for user settings
     match /userSettings/{userId} {
-      // A user can read/write to their own settings document
-      allow read, write: if request.auth.uid == userId;
+      // Any authenticated user can read user settings (needed to find users by email to invite)
+      allow read: if request.auth != null;
 
-      // A team owner can update another user's teamId IF they are adding that user to their team.
-      // This is a more complex rule to ensure security.
-      allow update: if request.auth.uid != null &&
-                      // The field being changed must be 'teamId'
-                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId']) &&
-                      // The person making the request must be the owner of the new teamId being assigned
-                      isTeamOwner(request.resource.data.teamId, request.auth.uid);
+      // A user can create their own settings document.
+      allow create: if request.auth.uid == userId;
+
+      // A user can update their own settings.
+      // Additionally, allow updating ONLY the teamId field if the requesting user is the owner of that team.
+      // This is crucial for adding/removing members from a team.
+      allow update: if request.auth.uid == userId ||
+                     (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId']) && 
+                      isTeamOwner(request.resource.data.teamId, request.auth.uid));
+    }
+
+    // Rules for clients
+    match /clients/{clientId} {
+      // Allow read/create/update/delete if the user is the owner of the client
+      // or if the client belongs to a team the user is a member of.
+      allow read, write: if request.auth.uid == resource.data.userId ||
+                         (resource.data.teamId != null && get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.members.hasAny([request.auth.uid]));
+
+      // When creating a new client
+      allow create: if request.auth.uid == request.resource.data.userId;
+      
+      match /notes/{noteId} {
+        // Allow full access to notes if the user has access to the parent client.
+        allow read, write: if request.auth.uid == get(/databases/$(database)/documents/clients/$(clientId)).data.userId ||
+                           (get(/databases/$(database)/documents/clients/$(clientId)).data.teamId != null && 
+                            get(/databases/$(database)/documents/teams/$(get(/databases/$(database)/documents/clients/$(clientId)).data.teamId)).data.members.hasAny([request.auth.uid]));
+      }
+    }
+
+    // Rules for teams
+    match /teams/{teamId} {
+      // Only the team owner can read, update, or delete the team document.
+      allow read, update, delete: if request.auth.uid == resource.data.ownerId;
+      
+      // A user can create a team if they set themselves as the owner.
+      allow create: if request.auth.uid == request.resource.data.ownerId;
+    }
+
+    // Rules for feedback
+    match /feedback/{feedbackId} {
+      // Any authenticated user can create feedback.
+      allow create: if request.auth != null;
+      // Only the admin can read feedback.
+      allow read: if get(/databases/$(database)/documents/userSettings/$(request.auth.uid)).data.email == 'cristianmupe2021@gmail.com';
+    }
+
+    // Rules for mail
+    match /mail/{mailId} {
+      // Allow any authenticated user to create (send) an email.
+      allow create: if request.auth != null;
     }
   }
 }
