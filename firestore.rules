@@ -1,0 +1,78 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if a user is the owner of a document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Helper function to get a document's data
+    function getDoc(path) {
+      return get(path).data;
+    }
+    
+    // Helper function to check if a user is the owner of a team
+    function isTeamOwner(teamId) {
+      return getDoc(/databases/$(database)/documents/teams/$(teamId)).ownerId == request.auth.uid;
+    }
+
+    // --- User Settings ---
+    // Users can read/write their own settings.
+    // Team owners can update the teamId of a user.
+    match /userSettings/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId']) && isTeamOwner(getDoc(/databases/$(database)/documents/userSettings/$(userId)).teamId);
+    }
+    
+    // --- Teams ---
+    // Authenticated users can create teams.
+    // Only the owner of a team can update or delete it.
+    // Any authenticated member of the team can read it.
+    match /teams/{teamId} {
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.members.map(m => m.uid);
+      allow update, delete: if isAuthenticated() && isTeamOwner(teamId);
+    }
+
+    // --- Clients ---
+    // A user can create, read, update, and delete clients if they are the owner
+    // or if they belong to the same team as the client.
+    match /clients/{clientId} {
+       allow create: if isAuthenticated();
+       allow read, update, delete: if isAuthenticated() && 
+                                   (isOwner(resource.data.userId) || isTeamOwner(resource.data.teamId));
+      
+      // Notes subcollection
+      match /notes/{noteId} {
+        allow read, create, delete: if isAuthenticated() && 
+                                    (isOwner(get(/databases/$(database)/documents/clients/$(clientId)).data.userId) || 
+                                     isTeamOwner(get(/databases/$(database)/documents/clients/$(clientId)).data.teamId));
+      }
+    }
+
+    // --- Mail ---
+    // Allow any authenticated user to create (send) an email.
+    // No one should be able to read/update/delete from the client.
+    match /mail/{mailId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if false;
+    }
+    
+    // --- Feedback ---
+    // Allow any authenticated user to create feedback.
+    // Reading should be restricted (e.g., to admins), but for now, we'll allow authenticated reads.
+    match /feedback/{feedbackId} {
+      allow create: if isAuthenticated();
+      // In a real app, you would likely restrict reads to specific admin UIDs.
+      allow read: if isAuthenticated(); 
+      allow update, delete: if false;
+    }
+  }
+}
