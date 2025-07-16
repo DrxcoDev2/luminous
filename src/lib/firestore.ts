@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, where, orderBy, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import type { Client } from '@/types/client';
@@ -157,7 +158,7 @@ export const deleteClientNote = async (clientId: string, noteId: string) => {
 
 // --- Personal Notes Functions ---
 
-export const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>, userId: string) => {
+export const addNote = async (noteData: Omit<Note, 'id' | 'createdAt' | 'userId'>, userId: string): Promise<string> => {
     const docRef = await addDoc(collection(db, 'notes'), {
         ...noteData,
         userId,
@@ -165,6 +166,15 @@ export const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>, userId: 
     });
     return docRef.id;
 };
+
+export const getNote = async (noteId: string): Promise<Note | null> => {
+    const noteRef = doc(db, 'notes', noteId);
+    const docSnap = await getDoc(noteRef);
+    if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as Note;
+    }
+    return null;
+}
 
 export const getNotes = async (userId: string): Promise<Note[]> => {
     const q = query(collection(db, 'notes'), where('userId', '==', userId), orderBy('createdAt', 'desc'));

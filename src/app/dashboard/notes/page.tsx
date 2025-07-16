@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { Note } from '@/types/note';
-import { addNote, getNotes, updateNote, deleteNote } from '@/lib/firestore';
+import { addNote, getNotes, updateNote, deleteNote, getNote } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
@@ -83,13 +83,16 @@ export default function NotesPage() {
 
     try {
       if (selectedNote) {
+        const updatedNote = { ...selectedNote, ...values };
         await updateNote(selectedNote.id, values);
-        setNotes(notes.map(n => (n.id === selectedNote.id ? { ...n, ...values } : n)));
+        setNotes(notes.map(n => (n.id === selectedNote.id ? updatedNote : n)));
         toast({ title: 'Success!', description: 'Note updated successfully.' });
       } else {
         const newNoteId = await addNote(values, user.uid);
-        const newNote: Note = { id: newNoteId, ...values, userId: user.uid, createdAt: Timestamp.now() };
-        setNotes([newNote, ...notes]);
+        const newNote = await getNote(newNoteId);
+        if (newNote) {
+            setNotes([newNote, ...notes]);
+        }
         toast({ title: 'Success!', description: 'Note created successfully.' });
       }
       setIsFormOpen(false);
