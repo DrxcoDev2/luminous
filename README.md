@@ -86,6 +86,12 @@ npm run dev
 
 The application will be available at [http://localhost:3000](http://localhost:3000).
 
+## Contributing
+
+We welcome contributions from the community! Please read our [Contributing Guidelines](CONTRIBUTING.md) to learn how you can help.
+
+All contributors are expected to adhere to our [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## License
 
 This project is licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for the full license text.
