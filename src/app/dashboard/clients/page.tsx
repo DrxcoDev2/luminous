@@ -61,7 +61,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import type { Client } from '@/types/client';
 import type { ClientNote } from '@/types/client-note';
-import { addClient, getClients, updateClient, deleteClient, sendEmail, addNote, getNotes, deleteNote } from '@/lib/firestore';
+import { addClient, getClients, updateClient, deleteClient, sendEmail, addNoteToClient, getClientNotes, deleteClientNote } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
@@ -176,7 +176,7 @@ export default function ClientsPage() {
   const fetchNotes = useCallback(async (clientId: string) => {
     setIsFetchingNotes(true);
     try {
-      const fetchedNotes = await getNotes(clientId);
+      const fetchedNotes = await getClientNotes(clientId);
       setNotes(fetchedNotes);
     } catch {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch client notes.' });
@@ -294,8 +294,8 @@ export default function ClientsPage() {
     if (!selectedClient || !user) return;
     setIsAddingNote(true);
     try {
-      const newNoteId = await addNote(selectedClient.id, values.note, user.uid);
-      const newNote = await getNotes(selectedClient.id).then(notes => notes.find(n => n.id === newNoteId)!);
+      const newNoteId = await addNoteToClient(selectedClient.id, values.note, user.uid);
+      const newNote = await getClientNotes(selectedClient.id).then(notes => notes.find(n => n.id === newNoteId)!);
       setNotes(prev => [newNote, ...prev]);
       noteForm.reset();
       toast({ title: 'Success!', description: 'Note added.' });
@@ -310,7 +310,7 @@ export default function ClientsPage() {
     if (!selectedClient) return;
     setIsDeletingNote(noteId);
     try {
-      await deleteNote(selectedClient.id, noteId);
+      await deleteClientNote(selectedClient.id, noteId);
       setNotes(prev => prev.filter(n => n.id !== noteId));
       toast({ title: 'Success!', description: 'Note deleted.' });
     } catch {

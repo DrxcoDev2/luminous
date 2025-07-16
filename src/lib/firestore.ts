@@ -5,6 +5,7 @@ import type { Client } from '@/types/client';
 import type { ClientNote } from '@/types/client-note';
 import type { Feedback } from '@/types/feedback';
 import type { Team, TeamMember } from '@/types/team';
+import type { Note } from '@/types/note';
 import { getUserSettings } from './user-settings';
 
 // Define the type for the data being added to Firestore, excluding the id
@@ -108,7 +109,7 @@ export const deleteClient = async (clientId: string) => {
 // --- Client Notes Functions ---
 
 // Function to add a new note to a client's 'notes' subcollection
-export const addNote = async (clientId: string, text: string, userId: string): Promise<string> => {
+export const addNoteToClient = async (clientId: string, text: string, userId: string): Promise<string> => {
     try {
         const notesCollectionRef = collection(db, 'clients', clientId, 'notes');
         const docRef = await addDoc(notesCollectionRef, {
@@ -124,7 +125,7 @@ export const addNote = async (clientId: string, text: string, userId: string): P
 };
 
 // Function to get all notes for a specific client
-export const getNotes = async (clientId: string): Promise<ClientNote[]> => {
+export const getClientNotes = async (clientId: string): Promise<ClientNote[]> => {
     try {
         const notesCollectionRef = collection(db, 'clients', clientId, 'notes');
         const q = query(notesCollectionRef, orderBy('createdAt', 'desc'));
@@ -143,7 +144,7 @@ export const getNotes = async (clientId: string): Promise<ClientNote[]> => {
 };
 
 // Function to delete a note from a client's 'notes' subcollection
-export const deleteNote = async (clientId: string, noteId: string) => {
+export const deleteClientNote = async (clientId: string, noteId: string) => {
     try {
         const noteDocRef = doc(db, 'clients', clientId, 'notes', noteId);
         await deleteDoc(noteDocRef);
@@ -151,6 +152,37 @@ export const deleteNote = async (clientId: string, noteId: string) => {
         console.error('Error deleting note: ', e);
         throw new Error('Could not delete note');
     }
+};
+
+
+// --- Personal Notes Functions ---
+
+export const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>, userId: string) => {
+    const docRef = await addDoc(collection(db, 'notes'), {
+        ...noteData,
+        userId,
+        createdAt: serverTimestamp(),
+    });
+    return docRef.id;
+};
+
+export const getNotes = async (userId: string): Promise<Note[]> => {
+    const q = query(collection(db, 'notes'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const notes: Note[] = [];
+    querySnapshot.forEach((doc) => {
+        notes.push({ id: doc.id, ...doc.data() } as Note);
+    });
+    return notes;
+};
+
+export const updateNote = async (noteId: string, noteData: Partial<Omit<Note, 'id'>>) => {
+    const noteRef = doc(db, 'notes', noteId);
+    await updateDoc(noteRef, noteData);
+};
+
+export const deleteNote = async (noteId: string) => {
+    await deleteDoc(doc(db, 'notes', noteId));
 };
 
 

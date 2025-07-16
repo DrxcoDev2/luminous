@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { logOut } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, LayoutDashboard, Loader2, LogOut, Settings, UserCircle, Users, BarChartHorizontal, MessageSquare } from 'lucide-react';
+import { Calendar, LayoutDashboard, Loader2, LogOut, Settings, UserCircle, Users, BarChartHorizontal, MessageSquare, ClipboardList } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -60,6 +60,7 @@ export default function DashboardLayout({
   const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/dashboard/clients', icon: Users, label: 'Clients' },
+    { href: '/dashboard/notes', icon: ClipboardList, label: 'Notes' },
     { href: '/dashboard/team', icon: Users, label: 'Team' },
     { href: '/dashboard/analytics', icon: BarChartHorizontal, label: 'Analytics' },
     { href: '/dashboard/calendar', icon: Calendar, label: 'Calendar' },
