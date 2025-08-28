@@ -319,7 +319,7 @@ export default function SettingsPage() {
                             <FormControl>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select your type of business" />
+                                  <SelectValue placeholder={`${field.value} Select your type of business`}/>
                                 </SelectTrigger>
                                 <SelectContent>
                                   {typeBusiness.map((type) => (

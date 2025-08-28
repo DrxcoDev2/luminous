@@ -65,6 +65,7 @@ export default function DashboardLayout({
     { href: '/dashboard/analytics', icon: BarChartHorizontal, label: 'Analytics' },
     { href: '/dashboard/calendar', icon: Calendar, label: 'Calendar' },
     { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
+    { href: '/dashboard/chat', icon: MessageSquare, label: 'Chat' },
   ];
 
   const adminNavItems = [

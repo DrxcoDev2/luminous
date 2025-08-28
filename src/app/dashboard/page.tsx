@@ -17,6 +17,7 @@ import { getUserSettings } from '@/lib/user-settings';
 import type { UserSettings } from '@/types/user-settings';
 import { timezones } from '@/lib/timezones';
 
+
 const chartConfig = {
   clients: {
     label: "New Clients",
