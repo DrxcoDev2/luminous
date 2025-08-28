@@ -8,5 +8,6 @@ export interface UserSettings {
   timezone?: string;
   accountType?: 'individual' | 'business';
   notificationHours?: number;
+  typeofbusiness?: string;
   teamId?: string | null;
 }
