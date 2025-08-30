@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { logOut } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, LayoutDashboard, Loader2, LogOut, Settings, UserCircle, Users, BarChartHorizontal, MessageSquare, ClipboardList } from 'lucide-react';
+import { Calendar, LayoutDashboard,  LogOut, Settings, UserCircle, Users, BarChartHorizontal, MessageSquare, ClipboardList } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -23,6 +23,8 @@ import {
 import { Logo } from '@/components/logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FirebaseError } from 'firebase/app';
+import { Sparkles } from 'lucide-react';
+import '../../../public/sppiner.css'
 
 export default function DashboardLayout({
   children,
@@ -52,8 +54,10 @@ export default function DashboardLayout({
   if (loading || !user) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        {/*<Loader2 className="h-8 w-8 animate-spin" />*/}
+        <Sparkles className="h-12 w-12 text-primary sppiner sppiner-slow transition-transform duration-300 group-hover:rotate-90" />
       </div>
+
     );
   }
 

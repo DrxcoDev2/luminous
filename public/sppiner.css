@@ -1,0 +1,28 @@
+.spinner {
+  width: 50px;           /* tamaño del círculo */
+  height: 50px;
+  border: 5px solid #f3f3f3;  /* borde gris claro */
+  border-top: 5px solid #3498db; /* borde superior azul */
+  border-radius: 50%;    /* círculo completo */
+  animation: spin 1s linear infinite; /* animación continua */
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Variante opcional: giro lento */
+.spinner-slow {
+  animation: spin 3s linear infinite;
+}
+
+/* Variante opcional: giro al revés */
+.spinner-reverse {
+  animation: spin-reverse 1s linear infinite;
+}
+
+@keyframes spin-reverse {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}

@@ -110,7 +110,8 @@ export default function LoginPage() {
   if (loading || user) {
      return (
        <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        {/*<Loader2 className="h-8 w-8 animate-spin" />*/}
+        <Logo></Logo>
       </div>
     );
   }

@@ -9,10 +9,10 @@ import type { TeamMember } from "@/types/team";
 
 export default function ChatPage() {
     const { user } = useAuth();
-    const [search, setSearch] = useState('');
-    const [users, setUsers] = useState<TeamMember[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [/*search*/, setSearch] = useState('');
+    const [/*users*/, setUsers] = useState<TeamMember[]>([]);
+    const [/*loading*/, setLoading] = useState(true);
+    const [/*error*/, setError] = useState('');
 
     useEffect(() => {
         async function fetchUsers() {
