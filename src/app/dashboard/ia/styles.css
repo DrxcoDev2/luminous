@@ -1,0 +1,14 @@
+.markdown pre {
+  background: #c4c4c4;
+  color: #272727;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.markdown code {
+  background: #c4c4c4;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.3rem;
+  font-family: "Fira Code", monospace;
+}
