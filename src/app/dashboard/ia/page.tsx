@@ -16,7 +16,8 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useToast } from '@/hooks/use-toast';
-
+import LogosMistralAiIcon, { LogosClaudeIcon } from "./assets/logos"
+import SlideAI from "./slide-ai"
 
 export default function Iachat() {
     const [messages, setMessages] = useState([
@@ -123,61 +124,64 @@ export default function Iachat() {
     };
 
     return (
-        <main className="p-10 m-10 flex items-center justify-center min-w-10">
-            <div className="">
-                {/* Conversación */}
-                <div className="mb-4 p-4 rounded-md min-h-[300px] overflow-y-auto border border-gray-300">
-                    {messages.map((msg, i) => (
-                        <div
-                            key={i}
-                            style={{ marginBottom: "0.5rem", textAlign: msg.role === "user" ? "right" : "left" }}
-                        >
-                            <strong>{msg.role === "user" ? "You" : "LumiAI"}:</strong>
-                            <div style={{ marginTop: "0.25rem" }} className="markdown">
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
-                                    rehypePlugins={[rehypeHighlight]}
-                                >
-                                    {msg.content}
-                                </ReactMarkdown>
+        <>
+            <main className="p-10 mx-auto flex items-center justify-center lg:m-10">
+                <div className="w-full">
+                    {/* Conversación */}
+                    <div className="mb-4 p-4 rounded-md min-h-[300px] overflow-y-auto border border-gray-100">
+                        {messages.map((msg, i) => (
+                            <div
+                                key={i}
+                                style={{ marginBottom: "0.5rem", textAlign: msg.role === "user" ? "right" : "left" }}
+                            >
+                                <strong>{msg.role === "user" ? "You" : "LumiAI"}:</strong>
+                                <div style={{ marginTop: "0.25rem" }} className="markdown">
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm]}
+                                        rehypePlugins={[rehypeHighlight]}
+                                    >
+                                        {msg.content}
+                                    </ReactMarkdown>
+                                </div>
                             </div>
+                        ))}
+                        {loading && <div><Loader2 className="h-8 w-8 animate-spin" /></div>}
+                    </div>
+
+                    {/* Input + Botón + Modelo */}
+                    <div style={{ display: "flex", gap: "0.5rem" }} className="items-center">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder="Type a message..."
+                            style={{ flex: 1, padding: "0.5rem" }}
+                            className="text-indigo-500 focus:outline-none "
+                        />
+                        <Button onClick={sendMessage} style={{ padding: "0.5rem 1rem" }}>Send</Button>
+
+                        {/* Dropdown para mostrar/cambiar modelo */}
+                        <div className="ml-5">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger className="flex"> {model}</DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuLabel>Choose Model</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="flex" onClick={() => setModel("mistralai/devstral-small")}>
+                                        <LogosMistralAiIcon></LogosMistralAiIcon> <span>Mistral Small 1.1</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setModel("qwen/qwen3-4b:free")}>
+                                        Qwen3 4B
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="flex" onClick={() => setModel("anthropic/claude-3-haiku")}>
+                                        <LogosClaudeIcon></LogosClaudeIcon> <span>Claude 3 Haiku</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
-                    ))}
-                    {loading && <div><Loader2 className="h-8 w-8 animate-spin" /></div>}
-                </div>
-
-                {/* Input + Botón + Modelo */}
-                <div style={{ display: "flex", gap: "0.5rem" }} className="items-center">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder="Type a message..."
-                        style={{ flex: 1, padding: "0.5rem" }}
-                    />
-                    <Button onClick={sendMessage} style={{ padding: "0.5rem 1rem" }}>Send</Button>
-
-                    {/* Dropdown para mostrar/cambiar modelo */}
-                    <div className="ml-5">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger>{model}</DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuLabel>Choose Model</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => setModel("mistralai/devstral-small")}>
-                                    Mistral Small 1.1
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setModel("qwen/qwen3-4b:free")}>
-                                    Qwen3 4B
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setModel("anthropic/claude-3-haiku")}>
-                                    Claude 3 Haiku
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
                     </div>
                 </div>
-            </div>
-        </main>
+            </main>
+        </>
     );
 }

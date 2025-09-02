@@ -15,7 +15,7 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-10">
+    <header className="sticky flex justify-center top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-10">
       <div className="container flex justify-center h-24 max-w-screen-2xl items-center">
         <div className="mr-12 hidden md:flex">
           <Logo />
@@ -37,7 +37,7 @@ export default function Header() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-end">
              <div className="hidden md:flex items-center gap-2">
                 <Button variant="ghost" asChild>
                     <Link href="/login">Login</Link>

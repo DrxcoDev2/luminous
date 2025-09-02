@@ -8,6 +8,7 @@ import type { Feedback } from '@/types/feedback';
 import type { Team, TeamMember } from '@/types/team';
 import type { Note } from '@/types/note';
 import { getUserSettings } from './user-settings';
+import type { AiChat } from '@/types/ai-chat';
 
 // Define the type for the data being added to Firestore, excluding the id
 type AddClientData = Omit<Client, 'id' | 'status' | 'userId' | 'createdAt' | 'notes' | 'teamId'>;
@@ -105,6 +106,26 @@ export const deleteClient = async (clientId: string) => {
         console.error('Error deleting document: ', e);
         throw new Error('Could not delete client');
     }
+};
+
+// --- IA Functions ---
+// Function to add a new conversation to the 'ia' collection
+export const addConversation = async (id: string, name: string): Promise<string> => {
+    const docRef = await addDoc(collection(db, 'AiChat'), {
+        id,
+        name,
+    });
+    return docRef.id;
+};
+
+// Function to get a conversation from the 'ia' collection
+export const getAiChat = async (name: string): Promise<AiChat | null> => {
+    const docRef = doc(db, 'AiChat', name);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return docSnap.data() as AiChat;
+    }
+    return null;
 };
 
 // --- Client Notes Functions ---

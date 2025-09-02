@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 export default function HeroSection() {
   return (
-    <section className="w-full py-24 px-18 md:py-32 lg:py-40 lg:pl-[200px]">
+    <section className="w-full font-poppins py-24 px-18 md:py-32 lg:py-40 lg:pl-[350px]">
       <div className="container px-4 grid items-center justify-center gap-8 md:grid-cols-2 md:gap-12">
         <div className="flex flex-col items-start space-y-4 text-center md:text-left">
           <div className="space-y-4">
@@ -16,7 +16,7 @@ export default function HeroSection() {
               Luminous provides the tools you need to schedule appointments, manage clients, and grow your service-based business.
             </p>
           </div>
-          <div className="flex flex-col gap-2 min-[400px]:flex-row">
+          <div className="flex flex-col justify-center gap-2 min-[400px]:flex-row">
             <Button asChild size="lg">
               <Link href="/register">
                 Get Started Free
